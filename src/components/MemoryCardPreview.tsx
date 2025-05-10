@@ -11,6 +11,7 @@ type MemoryCardData = {
   spotifyLink: string;
   emoji: string;
   theme: string;
+  photo: string | null;
 };
 
 type EmojiAnimationProps = {
@@ -86,12 +87,27 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
     <div
       className={`memory-card rounded-xl shadow-lg ${getThemeStyles(
         data.theme
-      )} relative flex flex-col`}
+      )} relative flex flex-col aspect-[9/16] max-h-[70vh]`}
     >
       <EmojiAnimation emoji={data.emoji} />
       
       <div className="flex flex-col justify-center items-center h-full p-6 relative z-20">
-        <div className="absolute top-0 left-0 w-full h-full bg-white bg-opacity-50 backdrop-blur-sm rounded-xl z-0"></div>
+        {/* Background layer with optional photo */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden rounded-xl z-0">
+          {data.photo ? (
+            <>
+              {/* Photo background with overlay */}
+              <img 
+                src={data.photo} 
+                alt="" 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-white bg-opacity-70 backdrop-blur-sm"></div>
+            </>
+          ) : (
+            <div className="w-full h-full bg-white bg-opacity-50 backdrop-blur-sm"></div>
+          )}
+        </div>
         
         <div className="relative z-10 text-center flex flex-col items-center justify-center h-full w-full space-y-6">
           <h1 className="text-3xl md:text-4xl fancy-text mb-2 text-center">
@@ -99,6 +115,17 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
           </h1>
           
           <div className="w-16 h-1 bg-current opacity-60 my-4"></div>
+          
+          {/* Display photo in middle if exists */}
+          {data.photo && (
+            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg mb-4">
+              <img 
+                src={data.photo} 
+                alt="Foto da memória" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
           
           <h2 className="text-2xl md:text-3xl font-light mb-4">
             {data.personName}

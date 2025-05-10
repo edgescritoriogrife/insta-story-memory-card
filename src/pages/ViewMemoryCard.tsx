@@ -15,6 +15,7 @@ const mockCards = {
     spotifyLink: "https://open.spotify.com/track/123456",
     emoji: "❤️",
     theme: "pink",
+    photo: "https://images.unsplash.com/photo-1522673607200-164d1b3ce551?auto=format&fit=crop&w=300",
   },
   "memory-2": {
     eventName: "Dia das Mães",
@@ -23,6 +24,7 @@ const mockCards = {
     spotifyLink: "https://open.spotify.com/track/654321",
     emoji: "💐",
     theme: "purple",
+    photo: "https://images.unsplash.com/photo-1591156021782-f3a5cb270695?auto=format&fit=crop&w=300",
   },
 };
 
@@ -119,12 +121,26 @@ const ViewMemoryCard = () => {
       <div
         className={`memory-card rounded-xl shadow-2xl ${getThemeStyles(
           cardData.theme
-        )} relative flex flex-col max-w-sm mx-auto`}
+        )} relative flex flex-col max-w-sm mx-auto aspect-[9/16]`}
       >
         <EmojiAnimation emoji={cardData.emoji} />
         
         <div className="flex flex-col justify-center items-center h-full p-6 relative z-20">
-          <div className="absolute top-0 left-0 w-full h-full bg-white bg-opacity-50 backdrop-blur-sm rounded-xl z-0"></div>
+          {/* Background layer with photo if available */}
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden rounded-xl z-0">
+            {cardData.photo ? (
+              <>
+                <img 
+                  src={cardData.photo} 
+                  alt="" 
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-white bg-opacity-70 backdrop-blur-sm"></div>
+              </>
+            ) : (
+              <div className="w-full h-full bg-white bg-opacity-50 backdrop-blur-sm"></div>
+            )}
+          </div>
           
           <div className="relative z-10 text-center flex flex-col items-center justify-center h-full w-full space-y-6">
             <h1 className="text-3xl md:text-4xl fancy-text mb-2">
@@ -132,6 +148,17 @@ const ViewMemoryCard = () => {
             </h1>
             
             <div className="w-16 h-1 bg-current opacity-60 my-4"></div>
+            
+            {/* Display photo in middle if exists */}
+            {cardData.photo && (
+              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg mb-4">
+                <img 
+                  src={cardData.photo} 
+                  alt="Foto da memória" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
             
             <h2 className="text-2xl md:text-3xl font-light mb-4">
               {cardData.personName}

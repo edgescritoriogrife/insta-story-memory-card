@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Music, Heart, Star, Bookmark } from "lucide-react";
+import { CalendarIcon, Music, Upload, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,7 @@ type MemoryCardData = {
   spotifyLink: string;
   emoji: string;
   theme: string;
+  photo: string | null; // Add photo field
 };
 
 const emojis = ["❤️", "🌟", "🎉", "🎂", "💐", "💍", "🎊", "🎁", "✨", "💖"];
@@ -51,6 +52,7 @@ export const MemoryCardCreator = () => {
     spotifyLink: "",
     emoji: "❤️",
     theme: "pink",
+    photo: null,
   });
 
   const handleChange = (
@@ -66,6 +68,40 @@ export const MemoryCardCreator = () => {
 
   const handleDateSelect = (date: Date | undefined) => {
     setFormData((prev) => ({ ...prev, celebrationDate: date }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // Check file size (limit to 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Arquivo muito grande",
+          description: "Por favor, escolha uma imagem com menos de 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Tipo de arquivo inválido",
+          description: "Por favor, escolha apenas arquivos de imagem.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setFormData((prev) => ({ ...prev, photo: event.target.result as string }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const validateSpotifyLink = (link: string) => {
@@ -141,6 +177,7 @@ export const MemoryCardCreator = () => {
         spotifyLink: "",
         emoji: "❤️",
         theme: "pink",
+        photo: null,
       });
     }, 2000);
   };
@@ -200,6 +237,41 @@ export const MemoryCardCreator = () => {
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="photo">Adicionar Foto</Label>
+              <div className="flex items-center gap-4">
+                <Label 
+                  htmlFor="photo-upload" 
+                  className="flex flex-col items-center justify-center w-32 h-32 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                >
+                  {formData.photo ? (
+                    <img 
+                      src={formData.photo} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover rounded-lg" 
+                    />
+                  ) : (
+                    <>
+                      <Image className="w-8 h-8 text-gray-400" />
+                      <span className="mt-2 text-sm text-gray-500">Escolher foto</span>
+                    </>
+                  )}
+                </Label>
+                <div className="text-sm text-gray-500">
+                  <p>Formato: JPG, PNG</p>
+                  <p>Tamanho máximo: 5MB</p>
+                </div>
+                <input
+                  id="photo-upload"
+                  name="photo"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </div>
             </div>
             
             <div className="space-y-2">
@@ -284,6 +356,18 @@ export const MemoryCardCreator = () => {
                     : "Não definida"}
                 </p>
               </div>
+              {formData.photo && (
+                <div>
+                  <p className="font-medium">Foto:</p>
+                  <div className="w-32 h-32 mt-2">
+                    <img 
+                      src={formData.photo} 
+                      alt="Foto do cartão" 
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  </div>
+                </div>
+              )}
               <div>
                 <p className="font-medium">Emoji:</p>
                 <p className="text-2xl">{formData.emoji}</p>
