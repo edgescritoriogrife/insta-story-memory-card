@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -140,7 +141,8 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
           </h2>
         </div>
         
-        <div className="flex flex-col items-center space-y-6 mb-8">
+        {/* Main content area */}
+        <div className="flex flex-col items-center mb-4">
           {data.celebrationDate && (
             <div className="mb-4 text-center">
               <p className="text-sm uppercase tracking-wider text-white opacity-90 mb-1">
@@ -151,21 +153,25 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
               </p>
             </div>
           )}
+        </div>
+        
+        {/* Footer section with music player at very bottom */}
+        <div className="w-full mt-auto flex flex-col items-center space-y-4">          
+          <div className="w-16 h-1 bg-white opacity-60"></div>
           
+          <div className="text-sm text-white opacity-70 mb-2">
+            Cartão de Memória • Acesso por 1 ano
+          </div>
+          
+          {/* Music player positioned at the very bottom */}
           {data.spotifyLink && (
-            <div className="flex items-center gap-2 p-3 rounded-full bg-white bg-opacity-70 shadow-lg">
+            <div className="flex items-center gap-2 p-3 rounded-full bg-white bg-opacity-70 shadow-lg w-full justify-center mb-2">
               <Music size={20} />
               <span className="text-sm font-medium">
                 {extractSpotifyArtist(data.spotifyLink)}
               </span>
             </div>
           )}
-          
-          <div className="w-16 h-1 bg-white opacity-60 mt-auto"></div>
-          
-          <div className="text-sm text-white opacity-70">
-            Cartão de Memória • Acesso por 1 ano
-          </div>
         </div>
       </div>
     </div>
