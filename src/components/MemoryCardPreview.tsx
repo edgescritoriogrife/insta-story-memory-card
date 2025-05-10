@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Music } from "lucide-react";
+import { Music, ArrowLeft, ArrowRight } from "lucide-react";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 type MemoryCardData = {
   eventName: string;
@@ -11,7 +12,7 @@ type MemoryCardData = {
   spotifyLink: string;
   emoji: string;
   theme: string;
-  photo: string | null;
+  photos: string[] | null; // Changed from photo to photos array
 };
 
 type EmojiAnimationProps = {
@@ -94,11 +95,11 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
       <div className="flex flex-col justify-center items-center h-full p-6 relative z-20">
         {/* Background layer with optional photo */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden rounded-xl z-0">
-          {data.photo ? (
+          {data.photos && data.photos.length > 0 ? (
             <>
-              {/* Photo background with overlay */}
+              {/* Photo background with overlay - using first photo as background */}
               <img 
-                src={data.photo} 
+                src={data.photos[0]} 
                 alt="" 
                 className="w-full h-full object-cover"
               />
@@ -116,14 +117,36 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
           
           <div className="w-16 h-1 bg-current opacity-60 my-4"></div>
           
-          {/* Display photo in middle if exists */}
-          {data.photo && (
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg mb-4">
-              <img 
-                src={data.photo} 
-                alt="Foto da memória" 
-                className="w-full h-full object-cover"
-              />
+          {/* Display photos carousel if photos exist */}
+          {data.photos && data.photos.length > 0 && (
+            <div className="w-full max-w-xs">
+              <Carousel
+                opts={{
+                  align: "center",
+                  loop: data.photos.length > 1,
+                }}
+                className="w-full"
+              >
+                <CarouselContent>
+                  {data.photos.map((photo, index) => (
+                    <CarouselItem key={index}>
+                      <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-white shadow-lg">
+                        <img 
+                          src={photo} 
+                          alt={`Foto ${index + 1}`} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {data.photos.length > 1 && (
+                  <>
+                    <CarouselPrevious className="left-1 w-8 h-8" />
+                    <CarouselNext className="right-1 w-8 h-8" />
+                  </>
+                )}
+              </Carousel>
             </div>
           )}
           

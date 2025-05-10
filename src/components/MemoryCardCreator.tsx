@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Music, Upload, Image } from "lucide-react";
+import { CalendarIcon, Music, Upload, Image, ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { MemoryCardPreview } from "./MemoryCardPreview";
 import { useToast } from "@/components/ui/use-toast";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 type MemoryCardData = {
   eventName: string;
@@ -29,7 +30,7 @@ type MemoryCardData = {
   spotifyLink: string;
   emoji: string;
   theme: string;
-  photo: string | null; // Add photo field
+  photos: string[] | null; // Changed from photo to photos array
 };
 
 const emojis = ["❤️", "🌟", "🎉", "🎂", "💐", "💍", "🎊", "🎁", "✨", "💖"];
@@ -52,7 +53,7 @@ export const MemoryCardCreator = () => {
     spotifyLink: "",
     emoji: "❤️",
     theme: "pink",
-    photo: null,
+    photos: null,
   });
 
   const handleChange = (
@@ -71,36 +72,64 @@ export const MemoryCardCreator = () => {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+    if (e.target.files && e.target.files.length > 0) {
+      // Create an array to store all processed photos
+      const newPhotos: string[] = [];
+      const existingPhotos = formData.photos || [];
+      const totalFiles = e.target.files.length;
+      let processedFiles = 0;
       
-      // Check file size (limit to 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "Arquivo muito grande",
-          description: "Por favor, escolha uma imagem com menos de 5MB.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check file type
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Tipo de arquivo inválido",
-          description: "Por favor, escolha apenas arquivos de imagem.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setFormData((prev) => ({ ...prev, photo: event.target.result as string }));
+      // Process each file
+      Array.from(e.target.files).forEach((file) => {
+        // Check file size (limit to 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "Arquivo muito grande",
+            description: `${file.name} é maior que 5MB. Será ignorado.`,
+            variant: "destructive",
+          });
+          processedFiles++;
+          return;
         }
-      };
-      reader.readAsDataURL(file);
+
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: "Tipo de arquivo inválido",
+            description: `${file.name} não é uma imagem válida. Será ignorado.`,
+            variant: "destructive",
+          });
+          processedFiles++;
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            newPhotos.push(event.target.result as string);
+            
+            // Update the form data after all files are processed
+            processedFiles++;
+            if (processedFiles === totalFiles) {
+              setFormData((prev) => ({
+                ...prev,
+                photos: [...existingPhotos, ...newPhotos]
+              }));
+            }
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removePhoto = (indexToRemove: number) => {
+    if (formData.photos) {
+      const updatedPhotos = formData.photos.filter((_, index) => index !== indexToRemove);
+      setFormData((prev) => ({
+        ...prev,
+        photos: updatedPhotos.length > 0 ? updatedPhotos : null
+      }));
     }
   };
 
@@ -177,7 +206,7 @@ export const MemoryCardCreator = () => {
         spotifyLink: "",
         emoji: "❤️",
         theme: "pink",
-        photo: null,
+        photos: null,
       });
     }, 2000);
   };
@@ -240,37 +269,56 @@ export const MemoryCardCreator = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="photo">Adicionar Foto</Label>
-              <div className="flex items-center gap-4">
-                <Label 
-                  htmlFor="photo-upload" 
-                  className="flex flex-col items-center justify-center w-32 h-32 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                >
-                  {formData.photo ? (
-                    <img 
-                      src={formData.photo} 
-                      alt="Preview" 
-                      className="w-full h-full object-cover rounded-lg" 
-                    />
-                  ) : (
-                    <>
-                      <Image className="w-8 h-8 text-gray-400" />
-                      <span className="mt-2 text-sm text-gray-500">Escolher foto</span>
-                    </>
-                  )}
-                </Label>
-                <div className="text-sm text-gray-500">
-                  <p>Formato: JPG, PNG</p>
-                  <p>Tamanho máximo: 5MB</p>
+              <Label htmlFor="photos">Adicionar Fotos</Label>
+              <div className="space-y-4">
+                {/* Photo upload button */}
+                <div className="flex items-center gap-4">
+                  <Label 
+                    htmlFor="photo-upload" 
+                    className="flex flex-col items-center justify-center w-32 h-32 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                  >
+                    <Image className="w-8 h-8 text-gray-400" />
+                    <span className="mt-2 text-sm text-gray-500">Escolher fotos</span>
+                  </Label>
+                  <div className="text-sm text-gray-500">
+                    <p>Formato: JPG, PNG</p>
+                    <p>Tamanho máximo: 5MB por foto</p>
+                  </div>
+                  <input
+                    id="photo-upload"
+                    name="photos"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
                 </div>
-                <input
-                  id="photo-upload"
-                  name="photo"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
+                
+                {/* Preview of uploaded photos */}
+                {formData.photos && formData.photos.length > 0 && (
+                  <div className="mt-4">
+                    <Label className="block mb-2">Fotos Selecionadas</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {formData.photos.map((photo, index) => (
+                        <div key={index} className="relative group">
+                          <img 
+                            src={photo} 
+                            alt={`Foto ${index + 1}`} 
+                            className="w-full h-24 object-cover rounded-md" 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removePhoto(index)}
+                            className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white opacity-0 group-hover:opacity-100 transition-opacity rounded-md"
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -356,15 +404,19 @@ export const MemoryCardCreator = () => {
                     : "Não definida"}
                 </p>
               </div>
-              {formData.photo && (
+              {formData.photos && formData.photos.length > 0 && (
                 <div>
-                  <p className="font-medium">Foto:</p>
-                  <div className="w-32 h-32 mt-2">
-                    <img 
-                      src={formData.photo} 
-                      alt="Foto do cartão" 
-                      className="w-full h-full object-cover rounded-lg"
-                    />
+                  <p className="font-medium">Fotos ({formData.photos.length}):</p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.photos.map((photo, index) => (
+                      <div key={index} className="w-16 h-16">
+                        <img 
+                          src={photo} 
+                          alt={`Foto ${index + 1}`} 
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
