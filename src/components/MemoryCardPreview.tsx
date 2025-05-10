@@ -1,9 +1,7 @@
-
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Music, ArrowLeft, ArrowRight } from "lucide-react";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Music } from "lucide-react";
 
 type MemoryCardData = {
   eventName: string;
@@ -12,7 +10,7 @@ type MemoryCardData = {
   spotifyLink: string;
   emoji: string;
   theme: string;
-  photos: string[] | null; // Changed from photo to photos array
+  photos: string[] | null;
 };
 
 type EmojiAnimationProps = {
@@ -56,6 +54,19 @@ const EmojiAnimation = ({ emoji }: EmojiAnimationProps) => {
 };
 
 export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  // Auto slideshow for photos
+  useEffect(() => {
+    if (data.photos && data.photos.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentPhotoIndex((prev) => (prev + 1) % data.photos!.length);
+      }, 3000); // Change photo every 3 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [data.photos]);
+
   const getThemeStyles = (theme: string) => {
     const themes = {
       pink: "bg-gradient-to-b from-pink-200 to-pink-100 text-pink-900",
@@ -92,81 +103,57 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
     >
       <EmojiAnimation emoji={data.emoji} />
       
-      <div className="flex flex-col justify-center items-center h-full p-6 relative z-20">
-        {/* Background layer with optional photo */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden rounded-xl z-0">
-          {data.photos && data.photos.length > 0 ? (
-            <>
-              {/* Photo background with overlay - using first photo as background */}
-              <img 
-                src={data.photos[0]} 
-                alt="" 
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-white bg-opacity-70 backdrop-blur-sm"></div>
-            </>
-          ) : (
-            <div className="w-full h-full bg-white bg-opacity-50 backdrop-blur-sm"></div>
-          )}
-        </div>
-        
-        <div className="relative z-10 text-center flex flex-col items-center justify-center h-full w-full space-y-6">
-          <h1 className="text-3xl md:text-4xl fancy-text mb-2 text-center">
+      {/* Full-screen background image with slideshow */}
+      <div className="absolute inset-0 w-full h-full z-0 transition-opacity duration-1000 ease-in-out">
+        {data.photos && data.photos.length > 0 && (
+          <>
+            {data.photos.map((photo, index) => (
+              <div 
+                key={index}
+                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                  index === currentPhotoIndex ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                <img 
+                  src={photo} 
+                  alt="" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
+            {/* Overlay to ensure text remains readable */}
+            <div className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-10"></div>
+          </>
+        )}
+      </div>
+      
+      <div className="flex flex-col justify-between items-center h-full p-6 relative z-20">
+        <div className="text-center flex flex-col items-center justify-start w-full mt-8 space-y-4">
+          <h1 className="text-3xl md:text-4xl fancy-text mb-2 text-white text-center">
             {data.eventName}
           </h1>
           
-          <div className="w-16 h-1 bg-current opacity-60 my-4"></div>
+          <div className="w-16 h-1 bg-white opacity-60 my-2"></div>
           
-          {/* Display photos carousel if photos exist */}
-          {data.photos && data.photos.length > 0 && (
-            <div className="w-full max-w-xs">
-              <Carousel
-                opts={{
-                  align: "center",
-                  loop: data.photos.length > 1,
-                }}
-                className="w-full"
-              >
-                <CarouselContent>
-                  {data.photos.map((photo, index) => (
-                    <CarouselItem key={index}>
-                      <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-white shadow-lg">
-                        <img 
-                          src={photo} 
-                          alt={`Foto ${index + 1}`} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                {data.photos.length > 1 && (
-                  <>
-                    <CarouselPrevious className="left-1 w-8 h-8" />
-                    <CarouselNext className="right-1 w-8 h-8" />
-                  </>
-                )}
-              </Carousel>
-            </div>
-          )}
-          
-          <h2 className="text-2xl md:text-3xl font-light mb-4">
+          <h2 className="text-2xl md:text-3xl font-light mb-4 text-white">
             {data.personName}
           </h2>
-          
+        </div>
+        
+        <div className="flex flex-col items-center space-y-6 mb-8">
           {data.celebrationDate && (
-            <div className="mb-6 text-center">
-              <p className="text-sm uppercase tracking-wider opacity-70 mb-1">
+            <div className="mb-4 text-center">
+              <p className="text-sm uppercase tracking-wider text-white opacity-90 mb-1">
                 Data da Celebração
               </p>
-              <p className="text-lg font-medium">
+              <p className="text-lg font-medium text-white">
                 {formatDate(data.celebrationDate)}
               </p>
             </div>
           )}
           
           {data.spotifyLink && (
-            <div className="flex items-center gap-2 p-3 rounded-full bg-white bg-opacity-70 shadow-sm">
+            <div className="flex items-center gap-2 p-3 rounded-full bg-white bg-opacity-70 shadow-lg">
               <Music size={20} />
               <span className="text-sm font-medium">
                 {extractSpotifyArtist(data.spotifyLink)}
@@ -174,9 +161,9 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
             </div>
           )}
           
-          <div className="w-16 h-1 bg-current opacity-60 my-4"></div>
+          <div className="w-16 h-1 bg-white opacity-60 mt-auto"></div>
           
-          <div className="text-sm opacity-70 mt-auto">
+          <div className="text-sm text-white opacity-70">
             Cartão de Memória • Acesso por 1 ano
           </div>
         </div>
