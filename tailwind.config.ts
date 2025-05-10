@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				memory: {
+					'pink': '#FFC0CB',
+					'purple': '#E6E6FA',
+					'blue': '#ADD8E6',
+					'mint': '#98FB98',
+					'gold': '#FFD700',
+					'cream': '#FFFDD0'
 				}
 			},
 			borderRadius: {
@@ -84,11 +93,16 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'emoji-fall': {
+					'0%': { transform: 'translateY(-10vh) translateX(0)', opacity: '1' },
+					'100%': { transform: 'translateY(100vh) translateX(10px)', opacity: '0.7' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'emoji-fall': 'emoji-fall 3s linear infinite'
 			}
 		}
 	},
