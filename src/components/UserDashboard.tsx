@@ -2,6 +2,8 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 type MemoryCard = {
   id: string;
@@ -10,35 +12,42 @@ type MemoryCard = {
   celebrationDate: string;
   createdAt: string;
   expiresAt: string;
-  link: string;
 };
 
 // Mock data for the dashboard
 const mockMemoryCards: MemoryCard[] = [
   {
-    id: "1",
+    id: "memory-1",
     eventName: "Aniversário de Casamento",
     personName: "Maria e João",
     celebrationDate: "15/06/2025",
     createdAt: "15/06/2024",
     expiresAt: "15/06/2025",
-    link: "#memory-1",
   },
   {
-    id: "2",
+    id: "memory-2",
     eventName: "Dia das Mães",
     personName: "Ana Silva",
     celebrationDate: "14/05/2025",
     createdAt: "10/05/2024",
     expiresAt: "10/05/2025",
-    link: "#memory-2",
   },
 ];
 
 export const UserDashboard = () => {
-  const copyLinkToClipboard = (link: string) => {
-    navigator.clipboard.writeText(`https://memorycards.com${link}`);
-    // In a real app, you would show a toast notification here
+  const navigate = useNavigate();
+  
+  const copyLinkToClipboard = (id: string) => {
+    // Get the current base URL from the window location
+    const baseUrl = window.location.origin;
+    const fullLink = `${baseUrl}/memory/${id}`;
+    
+    navigator.clipboard.writeText(fullLink);
+    toast("Link copiado para a área de transferência!");
+  };
+
+  const viewCard = (id: string) => {
+    navigate(`/memory/${id}`);
   };
 
   return (
@@ -74,14 +83,15 @@ export const UserDashboard = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => copyLinkToClipboard(card.link)}
+                    onClick={() => copyLinkToClipboard(card.id)}
                   >
                     Copiar Link
                   </Button>
-                  <Button size="sm" asChild>
-                    <a href={card.link} target="_blank" rel="noopener noreferrer">
-                      Ver Cartão
-                    </a>
+                  <Button 
+                    size="sm" 
+                    onClick={() => viewCard(card.id)}
+                  >
+                    Ver Cartão
                   </Button>
                 </div>
               </div>
