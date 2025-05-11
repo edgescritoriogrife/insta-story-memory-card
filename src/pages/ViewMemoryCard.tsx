@@ -3,8 +3,9 @@ import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Music } from "lucide-react";
+import { Music, Pause, Play } from "lucide-react";
 import { getMemoryCardById, MemoryCard } from "@/utils/storage";
+import { toast } from "sonner";
 
 // Mock data - In a real app, this would come from an API
 const mockCards = {
@@ -66,6 +67,115 @@ const EmojiAnimation = ({ emoji }: EmojiAnimationProps) => {
           {emoji}
         </span>
       ))}
+    </div>
+  );
+};
+
+// New component for the music player
+const MusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  
+  useEffect(() => {
+    // Clean up audio when component unmounts
+    return () => {
+      if (audio) {
+        audio.pause();
+        audio.src = '';
+      }
+    };
+  }, [audio]);
+
+  // Function to extract track ID from Spotify URL
+  const getSpotifyEmbedUrl = (spotifyLink?: string) => {
+    if (!spotifyLink) return null;
+    
+    try {
+      // Handle different Spotify URL formats
+      let trackId = '';
+      
+      if (spotifyLink.includes('/track/')) {
+        trackId = spotifyLink.split('/track/')[1].split('?')[0];
+      } else if (spotifyLink.includes('spotify:track:')) {
+        trackId = spotifyLink.split('spotify:track:')[1];
+      }
+      
+      if (!trackId) return null;
+      
+      // Return the embed URL format
+      return `https://open.spotify.com/embed/track/${trackId}`;
+    } catch (error) {
+      console.error("Error parsing Spotify link:", error);
+      return null;
+    }
+  };
+
+  const togglePlay = () => {
+    if (!spotifyLink) return;
+    
+    if (!audio) {
+      // If audio hasn't been initialized yet, create it
+      const newAudio = new Audio(spotifyLink);
+      newAudio.addEventListener('ended', () => setIsPlaying(false));
+      newAudio.addEventListener('error', (e) => {
+        toast.error("Erro ao reproduzir música");
+        console.error("Audio error:", e);
+        setIsPlaying(false);
+      });
+      setAudio(newAudio);
+      
+      // Start playing
+      newAudio.play()
+        .then(() => setIsPlaying(true))
+        .catch(err => {
+          console.error("Error playing audio:", err);
+          toast.error("Não foi possível reproduzir esta música");
+        });
+    } else {
+      // Toggle play/pause on existing audio
+      if (isPlaying) {
+        audio.pause();
+        setIsPlaying(false);
+      } else {
+        audio.play()
+          .then(() => setIsPlaying(true))
+          .catch(err => {
+            console.error("Error playing audio:", err);
+            toast.error("Não foi possível reproduzir esta música");
+          });
+      }
+    }
+  };
+
+  const embedUrl = getSpotifyEmbedUrl(spotifyLink);
+
+  return (
+    <div className="w-full">
+      {spotifyLink && (
+        <div className="flex items-center gap-2 p-3 rounded-full bg-white bg-opacity-70 shadow-lg w-full justify-center">
+          <button 
+            onClick={togglePlay} 
+            className="flex items-center gap-2 w-full justify-center"
+            aria-label={isPlaying ? "Pausar música" : "Tocar música"}
+          >
+            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+            <span className="text-sm font-medium">Música Especial</span>
+          </button>
+        </div>
+      )}
+      
+      {/* Hidden iframe for Spotify embed (fallback) */}
+      {embedUrl && (
+        <iframe 
+          src={embedUrl} 
+          width="0" 
+          height="0" 
+          frameBorder="0" 
+          allow="encrypted-media"
+          title="Spotify Player"
+          style={{display: 'none'}}
+        ></iframe>
+      )}
     </div>
   );
 };
@@ -226,12 +336,7 @@ const ViewMemoryCard = () => {
             </div>
             
             {/* Music player positioned at the very bottom */}
-            {cardData.spotifyLink && (
-              <div className="flex items-center gap-2 p-3 rounded-full bg-white bg-opacity-70 shadow-lg w-full justify-center mb-2">
-                <Music size={20} />
-                <span className="text-sm font-medium">Música Especial</span>
-              </div>
-            )}
+            <MusicPlayer spotifyLink={cardData.spotifyLink} />
           </div>
         </div>
       </div>

@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Music } from "lucide-react";
+import { Music, Pause, Play } from "lucide-react";
 
 type MemoryCardData = {
   eventName: string;
@@ -50,6 +49,66 @@ const EmojiAnimation = ({ emoji }: EmojiAnimationProps) => {
           {emoji}
         </span>
       ))}
+    </div>
+  );
+};
+
+// New component for the music player in preview mode
+const PreviewMusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // Clean up audio when component unmounts
+    return () => {
+      if (audio) {
+        audio.pause();
+        audio.src = '';
+      }
+    };
+  }, [audio]);
+
+  const togglePlay = () => {
+    if (!spotifyLink) return;
+
+    if (!audio) {
+      const newAudio = new Audio(spotifyLink);
+      newAudio.addEventListener('ended', () => setIsPlaying(false));
+      setAudio(newAudio);
+      
+      newAudio.play()
+        .then(() => setIsPlaying(true))
+        .catch(err => {
+          console.error("Error playing audio:", err);
+        });
+    } else {
+      if (isPlaying) {
+        audio.pause();
+        setIsPlaying(false);
+      } else {
+        audio.play()
+          .then(() => setIsPlaying(true))
+          .catch(err => {
+            console.error("Error playing audio:", err);
+          });
+      }
+    }
+  };
+
+  return (
+    <div className="w-full">
+      {spotifyLink && (
+        <div className="flex items-center gap-2 p-3 rounded-full bg-white bg-opacity-70 shadow-lg w-full justify-center">
+          <button 
+            onClick={togglePlay} 
+            className="flex items-center gap-2 w-full justify-center"
+            aria-label={isPlaying ? "Pausar música" : "Tocar música"}
+          >
+            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+            <span className="text-sm font-medium">Música Especial</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -164,14 +223,7 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
           </div>
           
           {/* Music player positioned at the very bottom */}
-          {data.spotifyLink && (
-            <div className="flex items-center gap-2 p-3 rounded-full bg-white bg-opacity-70 shadow-lg w-full justify-center mb-2">
-              <Music size={20} />
-              <span className="text-sm font-medium">
-                {extractSpotifyArtist(data.spotifyLink)}
-              </span>
-            </div>
-          )}
+          <PreviewMusicPlayer spotifyLink={data.spotifyLink} />
         </div>
       </div>
     </div>
