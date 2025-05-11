@@ -11,6 +11,9 @@ export const EmojiAnimation = ({ emoji }: EmojiAnimationProps) => {
   >([]);
 
   useEffect(() => {
+    // Garantir que emoji está definido
+    if (!emoji) return;
+    
     const newEmojis = Array.from({ length: 20 }).map((_, index) => {
       return {
         id: index,
@@ -21,6 +24,9 @@ export const EmojiAnimation = ({ emoji }: EmojiAnimationProps) => {
     });
     setEmojis(newEmojis);
   }, [emoji]);
+
+  // Se não tiver emoji definido, não renderiza nada
+  if (!emoji) return null;
 
   return (
     <div className="emoji-rain">
