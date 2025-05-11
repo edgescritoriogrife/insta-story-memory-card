@@ -1,11 +1,9 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Music, Pause, Play } from "lucide-react";
-import { getMemoryCardById, MemoryCard } from "@/utils/storage";
+import { getMemoryCardById } from "@/utils/storage";
 import { toast } from "sonner";
 
 // Dados simulados - Em um aplicativo real, isso viria de uma API
@@ -72,21 +70,8 @@ const EmojiAnimation = ({ emoji }: EmojiAnimationProps) => {
   );
 };
 
-// Componente para o player de música
-const MusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
-  
-  useEffect(() => {
-    // Limpa o áudio quando o componente é desmontado
-    return () => {
-      if (audio) {
-        audio.pause();
-        audio.src = '';
-      }
-    };
-  }, [audio]);
-
+// Componente para o player do Spotify
+const SpotifyPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
   // Função para extrair o ID da faixa do link do Spotify
   const getSpotifyEmbedUrl = (spotifyLink?: string) => {
     if (!spotifyLink) return null;
@@ -104,79 +89,31 @@ const MusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
       if (!trackId) return null;
       
       // Retorna o formato de URL incorporado
-      return `https://open.spotify.com/embed/track/${trackId}`;
+      return `https://open.spotify.com/embed/track/${trackId}?utm_source=generator`;
     } catch (error) {
       console.error("Erro ao analisar link do Spotify:", error);
       return null;
     }
   };
 
-  const togglePlay = () => {
-    if (!spotifyLink) return;
-    
-    if (!audio) {
-      // Se o áudio ainda não foi inicializado, crie-o
-      const newAudio = new Audio(spotifyLink);
-      newAudio.addEventListener('ended', () => setIsPlaying(false));
-      newAudio.addEventListener('error', (e) => {
-        toast.error("Não foi possível reproduzir esta música");
-        console.error("Erro de áudio:", e);
-        setIsPlaying(false);
-      });
-      setAudio(newAudio);
-      
-      // Começa a tocar
-      newAudio.play()
-        .then(() => setIsPlaying(true))
-        .catch(err => {
-          console.error("Erro ao reproduzir áudio:", err);
-          toast.error("Não foi possível reproduzir esta música");
-        });
-    } else {
-      // Alterna play/pause no áudio existente
-      if (isPlaying) {
-        audio.pause();
-        setIsPlaying(false);
-      } else {
-        audio.play()
-          .then(() => setIsPlaying(true))
-          .catch(err => {
-            console.error("Erro ao reproduzir áudio:", err);
-            toast.error("Não foi possível reproduzir esta música");
-          });
-      }
-    }
-  };
-
   const embedUrl = getSpotifyEmbedUrl(spotifyLink);
 
+  if (!embedUrl) {
+    return null;
+  }
+
   return (
-    <div className="w-full">
-      {spotifyLink && (
-        <div className="flex items-center gap-2 p-3 rounded-full bg-white bg-opacity-70 shadow-lg w-full justify-center">
-          <button 
-            onClick={togglePlay} 
-            className="flex items-center gap-2 w-full justify-center"
-            aria-label={isPlaying ? "Pausar música" : "Tocar música"}
-          >
-            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-            <span className="text-sm font-medium">Música Especial</span>
-          </button>
-        </div>
-      )}
-      
-      {/* iframe oculto para incorporação do Spotify (fallback) */}
-      {embedUrl && (
-        <iframe 
-          src={embedUrl} 
-          width="0" 
-          height="0" 
-          frameBorder="0" 
-          allow="encrypted-media"
-          title="Spotify Player"
-          style={{display: 'none'}}
-        ></iframe>
-      )}
+    <div className="spotify-player">
+      <iframe 
+        src={embedUrl} 
+        width="100%" 
+        height="80" 
+        frameBorder="0" 
+        allowFullScreen 
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+        loading="lazy"
+        title="Spotify Player"
+      ></iframe>
     </div>
   );
 };
@@ -334,19 +271,21 @@ const ViewMemoryCard = () => {
             )}
           </div>
           
-          {/* Seção de rodapé com player de música na parte inferior */}
+          {/* Seção de rodapé */}
           <div className="w-full mt-auto flex flex-col items-center space-y-4">
             <div className="w-16 h-1 bg-white opacity-60"></div>
             
             <div className="text-sm text-white opacity-70 mb-2">
               Cartão de Memória • Com carinho
             </div>
-            
-            {/* Player de música posicionado na parte inferior */}
-            <MusicPlayer spotifyLink={cardData.spotifyLink} />
           </div>
         </div>
       </div>
+      
+      {/* Player do Spotify abaixo do cartão */}
+      {cardData.spotifyLink && (
+        <SpotifyPlayer spotifyLink={cardData.spotifyLink} />
+      )}
       
       <div className="mt-8">
         <Button asChild variant="outline" className="text-white bg-purple-900 hover:bg-purple-800 border-purple-700">

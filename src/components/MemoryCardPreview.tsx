@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -55,21 +54,8 @@ const EmojiAnimation = ({ emoji }: EmojiAnimationProps) => {
   );
 };
 
-// Componente para o player de música no modo de pré-visualização
-const PreviewMusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    // Limpa o áudio quando o componente é desmontado
-    return () => {
-      if (audio) {
-        audio.pause();
-        audio.src = '';
-      }
-    };
-  }, [audio]);
-
+// Componente para o player do Spotify no modo de pré-visualização
+const SpotifyPreviewPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
   // Função para extrair o ID da faixa do link do Spotify
   const getSpotifyEmbedUrl = (spotifyLink?: string) => {
     if (!spotifyLink) return null;
@@ -87,77 +73,31 @@ const PreviewMusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
       if (!trackId) return null;
       
       // Retorna o formato de URL incorporado
-      return `https://open.spotify.com/embed/track/${trackId}`;
+      return `https://open.spotify.com/embed/track/${trackId}?utm_source=generator`;
     } catch (error) {
       console.error("Erro ao analisar link do Spotify:", error);
       return null;
     }
   };
 
-  const togglePlay = () => {
-    if (!spotifyLink) return;
-
-    if (!audio) {
-      const newAudio = new Audio(spotifyLink);
-      newAudio.addEventListener('ended', () => setIsPlaying(false));
-      newAudio.addEventListener('error', (e) => {
-        toast.error("Não foi possível reproduzir esta música");
-        console.error("Erro de áudio:", e);
-        setIsPlaying(false);
-      });
-      
-      setAudio(newAudio);
-      
-      newAudio.play()
-        .then(() => setIsPlaying(true))
-        .catch(err => {
-          console.error("Erro ao reproduzir áudio:", err);
-          toast.error("Não foi possível reproduzir esta música");
-        });
-    } else {
-      if (isPlaying) {
-        audio.pause();
-        setIsPlaying(false);
-      } else {
-        audio.play()
-          .then(() => setIsPlaying(true))
-          .catch(err => {
-            console.error("Erro ao reproduzir áudio:", err);
-            toast.error("Não foi possível reproduzir esta música");
-          });
-      }
-    }
-  };
-
   const embedUrl = getSpotifyEmbedUrl(spotifyLink);
 
+  if (!embedUrl) {
+    return null;
+  }
+
   return (
-    <div className="w-full">
-      {spotifyLink && (
-        <div className="flex items-center gap-2 p-3 rounded-full bg-white bg-opacity-70 shadow-lg w-full justify-center">
-          <button 
-            onClick={togglePlay} 
-            className="flex items-center gap-2 w-full justify-center"
-            aria-label={isPlaying ? "Pausar música" : "Tocar música"}
-          >
-            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-            <span className="text-sm font-medium">Música Especial</span>
-          </button>
-        </div>
-      )}
-      
-      {/* iframe oculto para incorporação do Spotify (fallback) */}
-      {embedUrl && (
-        <iframe 
-          src={embedUrl} 
-          width="0" 
-          height="0" 
-          frameBorder="0" 
-          allow="encrypted-media"
-          title="Spotify Player"
-          style={{display: 'none'}}
-        ></iframe>
-      )}
+    <div className="spotify-player">
+      <iframe 
+        src={embedUrl} 
+        width="100%" 
+        height="80" 
+        frameBorder="0" 
+        allowFullScreen 
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+        loading="lazy"
+        title="Spotify Preview Player"
+      ></iframe>
     </div>
   );
 };
@@ -200,76 +140,80 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
   };
 
   return (
-    <div
-      className={`memory-card rounded-xl shadow-lg ${getThemeStyles(
-        data.theme
-      )} relative flex flex-col aspect-[9/16] max-h-[70vh]`}
-    >
-      <EmojiAnimation emoji={data.emoji} />
-      
-      {/* Imagem de fundo em tela cheia com apresentação de slides */}
-      <div className="absolute inset-0 w-full h-full z-0 transition-opacity duration-1000 ease-in-out">
-        {data.photos && data.photos.length > 0 && (
-          <>
-            {data.photos.map((photo, index) => (
-              <div 
-                key={index}
-                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                  index === currentPhotoIndex ? "opacity-100" : "opacity-0"
-                }`}
-              >
-                <img 
-                  src={photo} 
-                  alt="" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ))}
-            {/* Removendo o backdrop-blur-sm para evitar o desfoque nas imagens */}
-            <div className="absolute inset-0 bg-black bg-opacity-30 z-10"></div>
-          </>
-        )}
-      </div>
-      
-      <div className="flex flex-col justify-between items-center h-full p-6 relative z-20">
-        <div className="text-center flex flex-col items-center justify-start w-full mt-8 space-y-4">
-          <h1 className="text-3xl md:text-4xl fancy-text mb-2 text-white text-center">
-            {data.eventName}
-          </h1>
-          
-          <div className="w-16 h-1 bg-white opacity-60 my-2"></div>
-          
-          <h2 className="text-2xl md:text-3xl font-light mb-4 text-white">
-            {data.personName}
-          </h2>
-        </div>
+    <div className="flex flex-col items-center">
+      <div
+        className={`memory-card rounded-xl shadow-lg ${getThemeStyles(
+          data.theme
+        )} relative flex flex-col aspect-[9/16] max-h-[70vh]`}
+      >
+        <EmojiAnimation emoji={data.emoji} />
         
-        {/* Área de conteúdo principal */}
-        <div className="flex flex-col items-center mb-4">
-          {data.celebrationDate && (
-            <div className="mb-4 text-center">
-              <p className="text-sm uppercase tracking-wider text-white opacity-90 mb-1">
-                Data da Celebração
-              </p>
-              <p className="text-lg font-medium text-white">
-                {formatDate(data.celebrationDate)}
-              </p>
-            </div>
+        {/* Imagem de fundo em tela cheia com apresentação de slides */}
+        <div className="absolute inset-0 w-full h-full z-0 transition-opacity duration-1000 ease-in-out">
+          {data.photos && data.photos.length > 0 && (
+            <>
+              {data.photos.map((photo, index) => (
+                <div 
+                  key={index}
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                    index === currentPhotoIndex ? "opacity-100" : "opacity-0"
+                  }`}
+                >
+                  <img 
+                    src={photo} 
+                    alt="" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+              {/* Removendo o backdrop-blur-sm para evitar o desfoque nas imagens */}
+              <div className="absolute inset-0 bg-black bg-opacity-30 z-10"></div>
+            </>
           )}
         </div>
         
-        {/* Seção de rodapé com player de música na parte inferior */}
-        <div className="w-full mt-auto flex flex-col items-center space-y-4">          
-          <div className="w-16 h-1 bg-white opacity-60"></div>
-          
-          <div className="text-sm text-white opacity-70 mb-2">
-            Cartão de Memória • Acesso por 1 ano
+        <div className="flex flex-col justify-between items-center h-full p-6 relative z-20">
+          <div className="text-center flex flex-col items-center justify-start w-full mt-8 space-y-4">
+            <h1 className="text-3xl md:text-4xl fancy-text mb-2 text-white text-center">
+              {data.eventName}
+            </h1>
+            
+            <div className="w-16 h-1 bg-white opacity-60 my-2"></div>
+            
+            <h2 className="text-2xl md:text-3xl font-light mb-4 text-white">
+              {data.personName}
+            </h2>
           </div>
           
-          {/* Player de música posicionado na parte inferior */}
-          <PreviewMusicPlayer spotifyLink={data.spotifyLink} />
+          {/* Área de conteúdo principal */}
+          <div className="flex flex-col items-center mb-4">
+            {data.celebrationDate && (
+              <div className="mb-4 text-center">
+                <p className="text-sm uppercase tracking-wider text-white opacity-90 mb-1">
+                  Data da Celebração
+                </p>
+                <p className="text-lg font-medium text-white">
+                  {formatDate(data.celebrationDate)}
+                </p>
+              </div>
+            )}
+          </div>
+          
+          {/* Seção de rodapé */}
+          <div className="w-full mt-auto flex flex-col items-center space-y-4">          
+            <div className="w-16 h-1 bg-white opacity-60"></div>
+            
+            <div className="text-sm text-white opacity-70 mb-2">
+              Cartão de Memória • Acesso por 1 ano
+            </div>
+          </div>
         </div>
       </div>
+      
+      {/* Player do Spotify abaixo do cartão */}
+      {data.spotifyLink && (
+        <SpotifyPreviewPlayer spotifyLink={data.spotifyLink} />
+      )}
     </div>
   );
 };
