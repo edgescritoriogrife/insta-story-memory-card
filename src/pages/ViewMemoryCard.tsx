@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -282,9 +283,11 @@ const ViewMemoryCard = () => {
         </div>
       </div>
       
-      {/* Player do Spotify abaixo do cartão */}
+      {/* Player do Spotify abaixo do cartão com espaço aumentado */}
       {cardData.spotifyLink && (
-        <SpotifyPlayer spotifyLink={cardData.spotifyLink} />
+        <div className="mt-8">
+          <SpotifyPlayer spotifyLink={cardData.spotifyLink} />
+        </div>
       )}
       
       <div className="mt-8">

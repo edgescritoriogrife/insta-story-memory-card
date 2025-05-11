@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -210,10 +211,13 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
         </div>
       </div>
       
-      {/* Player do Spotify abaixo do cartão */}
+      {/* Player do Spotify abaixo do cartão com espaço aumentado */}
       {data.spotifyLink && (
-        <SpotifyPreviewPlayer spotifyLink={data.spotifyLink} />
+        <div className="mt-8">
+          <SpotifyPreviewPlayer spotifyLink={data.spotifyLink} />
+        </div>
       )}
     </div>
   );
 };
+
