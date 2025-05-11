@@ -90,6 +90,18 @@ export const getMemoryCards = (): MemoryCard[] => {
   }
 };
 
+// Limpar todos os cartões de memória
+export const clearAllMemoryCards = (): boolean => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    console.log("Todos os cartões foram removidos do localStorage");
+    return true;
+  } catch (error) {
+    console.error("Erro ao limpar cartões de memória:", error);
+    return false;
+  }
+};
+
 // Limpa cartões expirados para liberar espaço
 const cleanupExpiredCards = (): void => {
   try {
@@ -173,10 +185,22 @@ export const saveMemoryCard = async (card: MemoryCard): Promise<boolean> => {
     }
     
     try {
+      // Garantir que salvamos o cartão no localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
-      console.log(`${cards.length} cartões salvos com sucesso no localStorage`);
-      console.log("IDs dos cartões salvos:", cards.map(c => c.id).join(", "));
-      return true;
+      
+      // Verificar se o cartão foi realmente salvo lendo de volta
+      const verifyCards = getMemoryCards();
+      const savedCard = verifyCards.find(c => c.id === card.id);
+      
+      if (savedCard) {
+        console.log(`Cartão ${card.id} verificado e confirmado no localStorage`);
+        console.log(`Total de ${verifyCards.length} cartões salvos com sucesso`);
+        console.log("IDs dos cartões salvos:", verifyCards.map(c => c.id).join(", "));
+        return true;
+      } else {
+        console.error(`Erro: Cartão ${card.id} não foi encontrado após tentativa de salvamento`);
+        return false;
+      }
     } catch (e) {
       console.error("Erro ao salvar no localStorage:", e);
       return false;

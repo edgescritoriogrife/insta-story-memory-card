@@ -4,7 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { getMemoryCards, MemoryCard } from "@/utils/storage";
+import { getMemoryCards, MemoryCard, clearAllMemoryCards, deleteMemoryCard } from "@/utils/storage";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 
 export const UserDashboard = () => {
   const navigate = useNavigate();
@@ -42,12 +44,60 @@ export const UserDashboard = () => {
   const viewCard = (id: string) => {
     navigate(`/memory/${id}`);
   };
+  
+  const handleClearAllCards = () => {
+    const success = clearAllMemoryCards();
+    if (success) {
+      toast.success("Todos os cartões foram removidos com sucesso");
+      setMemoryCards([]);
+    } else {
+      toast.error("Erro ao limpar cartões");
+    }
+  };
+  
+  const handleDeleteCard = (id: string) => {
+    try {
+      deleteMemoryCard(id);
+      setMemoryCards((prev) => prev.filter(card => card.id !== id));
+      toast.success("Cartão removido com sucesso");
+    } catch (error) {
+      console.error("Erro ao remover cartão:", error);
+      toast.error("Erro ao remover cartão");
+    }
+  };
 
   return (
     <div className="container max-w-4xl mx-auto my-8">
-      <h1 className="text-3xl font-bold mb-8 text-center fancy-text text-purple-700">
-        Meus Cartões de Memória
-      </h1>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
+        <h1 className="text-3xl font-bold text-center md:text-left fancy-text text-purple-700 mb-4 md:mb-0">
+          Meus Cartões de Memória
+        </h1>
+        
+        {memoryCards.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" className="self-center md:self-auto">
+                <Trash2 className="h-4 w-4 mr-2" /> Limpar todos os cartões
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação não pode ser desfeita. Isso removerá permanentemente todos os seus cartões 
+                  de memória do armazenamento local deste dispositivo.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleClearAllCards}>
+                  Sim, remover todos
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
 
       {loading && (
         <div className="flex justify-center py-12">
@@ -69,10 +119,22 @@ export const UserDashboard = () => {
           {memoryCards.map((card) => (
             <Card key={card.id} className="overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-purple-100 to-pink-100">
-                <CardTitle>{card.eventName}</CardTitle>
-                <CardDescription className="text-gray-700">
-                  {card.personName}
-                </CardDescription>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>{card.eventName}</CardTitle>
+                    <CardDescription className="text-gray-700">
+                      {card.personName}
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-gray-500 hover:text-red-500"
+                    onClick={() => handleDeleteCard(card.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="grid gap-2 md:grid-cols-2 text-sm">
