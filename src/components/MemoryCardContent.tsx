@@ -98,19 +98,19 @@ export const MemoryCardContent = ({ cardData }: MemoryCardContentProps) => {
               </p>
             </div>
           )}
-          
+        </div>
+        
+        {/* Seção de rodapé */}
+        <div className="w-full mt-auto flex flex-col items-center space-y-4">
           {/* Exibição da mensagem personalizada */}
           {cardData.message && (
-            <div className="mt-4 text-center px-4 py-3 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg">
+            <div className="mb-4 text-center px-4 py-3 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg">
               <p className="text-white leading-relaxed italic">
                 "{cardData.message}"
               </p>
             </div>
           )}
-        </div>
-        
-        {/* Seção de rodapé */}
-        <div className="w-full mt-auto flex flex-col items-center space-y-4">
+          
           <div className="w-16 h-1 bg-white opacity-60"></div>
           
           <div className="text-sm text-white opacity-70 mb-2">

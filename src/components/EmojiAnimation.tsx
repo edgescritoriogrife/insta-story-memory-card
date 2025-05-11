@@ -43,7 +43,8 @@ export const EmojiAnimation = ({ emoji }: EmojiAnimationProps) => {
           {emoji}
         </span>
       ))}
-      <style jsx>{`
+      <style>
+        {`
         @keyframes fall {
           0% {
             transform: translateY(-5vh) scale(0.8);
@@ -63,7 +64,8 @@ export const EmojiAnimation = ({ emoji }: EmojiAnimationProps) => {
         .emoji-rain {
           pointer-events: none;
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
