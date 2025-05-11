@@ -23,20 +23,35 @@ export const getMemoryCards = (): MemoryCard[] => {
 };
 
 // Add a new memory card to storage
-export const saveMemoryCard = (card: MemoryCard): void => {
-  const cards = getMemoryCards();
-  // Check if card with same ID exists
-  const index = cards.findIndex(c => c.id === card.id);
-  
-  if (index >= 0) {
-    // Update existing card
-    cards[index] = card;
-  } else {
-    // Add new card
-    cards.push(card);
+export const saveMemoryCard = (card: MemoryCard): boolean => {
+  try {
+    const cards = getMemoryCards();
+    // Check if card with same ID exists
+    const index = cards.findIndex(c => c.id === card.id);
+    
+    if (index >= 0) {
+      // Update existing card
+      cards[index] = card;
+    } else {
+      // Add new card
+      cards.push(card);
+    }
+    
+    // If card contains large photos, compress or limit them
+    if (card.photos && card.photos.length > 0) {
+      // Limit to 3 photos maximum to reduce storage usage
+      card.photos = card.photos.slice(0, 3);
+    }
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+    return true;
+  } catch (error) {
+    console.error("Error saving memory card:", error);
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.error("Storage quota exceeded. Try removing some existing cards first.");
+    }
+    return false;
   }
-  
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
 };
 
 // Get a specific memory card by ID

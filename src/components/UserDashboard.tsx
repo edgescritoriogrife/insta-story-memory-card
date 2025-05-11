@@ -9,12 +9,26 @@ import { getMemoryCards, MemoryCard } from "@/utils/storage";
 export const UserDashboard = () => {
   const navigate = useNavigate();
   const [memoryCards, setMemoryCards] = useState<MemoryCard[]>([]);
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     // Load memory cards from storage when component mounts
-    const cards = getMemoryCards();
-    setMemoryCards(cards);
+    loadCards();
   }, []);
+  
+  // Function to refresh cards from storage
+  const loadCards = () => {
+    setLoading(true);
+    try {
+      const cards = getMemoryCards();
+      setMemoryCards(cards);
+    } catch (error) {
+      console.error("Error loading memory cards:", error);
+      toast.error("Erro ao carregar cartões");
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const copyLinkToClipboard = (id: string) => {
     // Get the current base URL from the window location
@@ -35,7 +49,17 @@ export const UserDashboard = () => {
         Meus Cartões de Memória
       </h1>
 
-      {memoryCards.length === 0 ? (
+      {loading && (
+        <div className="flex justify-center py-12">
+          <div className="animate-pulse flex flex-col items-center">
+            <div className="w-16 h-16 bg-purple-200 rounded-full mb-4"></div>
+            <div className="h-2 bg-gray-200 rounded-full w-48 mb-2.5"></div>
+            <div className="h-2 bg-gray-200 rounded-full w-32"></div>
+          </div>
+        </div>
+      )}
+
+      {!loading && memoryCards.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <p className="text-gray-600 mb-4">Você ainda não criou nenhum cartão de memória.</p>
           <Button onClick={() => navigate("/")}>Criar Meu Primeiro Cartão</Button>

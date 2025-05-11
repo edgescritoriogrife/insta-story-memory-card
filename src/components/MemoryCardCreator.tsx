@@ -19,7 +19,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { MemoryCardPreview } from "./MemoryCardPreview";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useNavigate } from "react-router-dom";
 import { saveMemoryCard } from "@/utils/storage";
@@ -45,9 +45,8 @@ const themes = [
 ];
 
 export const MemoryCardCreator = () => {
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const [step, setStep] = useState<"form" | "preview" | "payment">("form");
+  const [step, setStep] = useState<"form" | "preview" | "payment" | "processing">("form");
   const [formData, setFormData] = useState<MemoryCardData>({
     eventName: "",
     personName: "",
@@ -187,11 +186,11 @@ export const MemoryCardCreator = () => {
   };
 
   const handlePayment = () => {
+    // Show processing state
+    setStep("processing");
+    
     // This would be connected to a payment processor in a real app
-    toast({
-      title: "Processando pagamento",
-      description: "R$ 27,90 - Processando...",
-    });
+    toast.loading("Processando pagamento...", { duration: 2000 });
     
     // Simulate payment processing
     setTimeout(() => {
@@ -220,28 +219,39 @@ export const MemoryCardCreator = () => {
       };
       
       // Save the memory card to storage
-      saveMemoryCard(memoryCard);
+      const saveSuccess = saveMemoryCard(memoryCard);
       
-      toast({
-        title: "Pagamento confirmado!",
-        description: "Seu cartão de memória foi salvo na sua dashboard.",
-      });
-      
-      // Navigate to dashboard after successful payment
-      navigate("/dashboard");
-      
-      // Reset form data after successful payment
-      setFormData({
-        eventName: "",
-        personName: "",
-        celebrationDate: undefined,
-        spotifyLink: "",
-        emoji: "❤️",
-        theme: "pink",
-        photos: null,
-      });
+      if (saveSuccess) {
+        toast.success("Pagamento confirmado! Seu cartão foi salvo.", {
+          duration: 3000,
+        });
+        
+        // Navigate to dashboard after successful payment
+        setTimeout(() => navigate("/dashboard"), 1000);
+      } else {
+        toast.error("Erro ao salvar o cartão. O armazenamento pode estar cheio.", {
+          duration: 5000,
+        });
+        setStep("preview"); // Return to preview step so they can try again
+      }
     }, 2000);
   };
+
+  // Processing view
+  if (step === "processing") {
+    return (
+      <div className="bg-white p-12 rounded-lg shadow-lg text-center">
+        <div className="animate-pulse flex flex-col items-center justify-center">
+          <div className="w-24 h-24 bg-purple-200 rounded-full mb-6"></div>
+          <h2 className="text-2xl font-bold mb-4 fancy-text text-purple-600">Processando Pagamento</h2>
+          <p className="text-gray-600 mb-6">Por favor, aguarde enquanto processamos seu pagamento...</p>
+          <div className="w-full max-w-xs bg-gray-200 rounded-full h-2.5">
+            <div className="bg-purple-600 h-2.5 rounded-full animate-[pulse_2s_ease-in-out_infinite]" style={{ width: '50%' }}></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto">
