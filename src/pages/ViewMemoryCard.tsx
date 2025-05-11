@@ -301,8 +301,8 @@ const ViewMemoryCard = () => {
                   />
                 </div>
               ))}
-              {/* Sobreposição para garantir que o texto permaneça legível */}
-              <div className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-10"></div>
+              {/* Removendo o backdrop-blur-sm para evitar o desfoque nas imagens */}
+              <div className="absolute inset-0 bg-black bg-opacity-30 z-10"></div>
             </>
           )}
         </div>
