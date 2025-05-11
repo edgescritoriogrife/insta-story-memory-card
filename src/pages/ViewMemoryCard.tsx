@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Music } from "lucide-react";
+import { getMemoryCardById, MemoryCard } from "@/utils/storage";
 
 // Mock data - In a real app, this would come from an API
 const mockCards = {
@@ -76,12 +76,39 @@ const ViewMemoryCard = () => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   useEffect(() => {
-    // In a real app, fetch card data from an API
-    // This is just a mock
-    if (id && id in mockCards) {
-      setCardData(mockCards[id as keyof typeof mockCards]);
+    if (id) {
+      // Try to get the card from storage first
+      const storedCard = getMemoryCardById(id);
+      
+      if (storedCard) {
+        // Convert string dates to Date objects for UI formatting
+        const convertedCard = {
+          ...storedCard,
+          celebrationDate: parseDate(storedCard.celebrationDate)
+        };
+        setCardData(convertedCard);
+      } 
+      // Fallback to mock data if not found in storage
+      else if (id in mockCards) {
+        setCardData(mockCards[id as keyof typeof mockCards]);
+      }
     }
   }, [id]);
+  
+  // Helper function to parse date strings
+  const parseDate = (dateString: string): Date | undefined => {
+    try {
+      const parts = dateString.split('/');
+      if (parts.length === 3) {
+        const [day, month, year] = parts.map(Number);
+        return new Date(year, month - 1, day);
+      }
+      return undefined;
+    } catch (error) {
+      console.error("Error parsing date:", error);
+      return undefined;
+    }
+  };
 
   // Auto slideshow for photos
   useEffect(() => {

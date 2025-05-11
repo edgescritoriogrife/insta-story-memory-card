@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Music, Upload, Image, ArrowLeft, ArrowRight } from "lucide-react";
@@ -22,6 +21,8 @@ import { cn } from "@/lib/utils";
 import { MemoryCardPreview } from "./MemoryCardPreview";
 import { useToast } from "@/components/ui/use-toast";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { useNavigate } from "react-router-dom";
+import { saveMemoryCard } from "@/utils/storage";
 
 type MemoryCardData = {
   eventName: string;
@@ -45,6 +46,7 @@ const themes = [
 
 export const MemoryCardCreator = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [step, setStep] = useState<"form" | "preview" | "payment">("form");
   const [formData, setFormData] = useState<MemoryCardData>({
     eventName: "",
@@ -193,11 +195,41 @@ export const MemoryCardCreator = () => {
     
     // Simulate payment processing
     setTimeout(() => {
+      // Generate a unique ID for the memory card
+      const cardId = `memory-${Date.now()}`;
+      
+      // Calculate creation and expiration dates
+      const now = new Date();
+      const createdAt = format(now, "dd/MM/yyyy");
+      
+      // Set expiration date to 1 year from now
+      const expiresAt = format(new Date(now.setFullYear(now.getFullYear() + 1)), "dd/MM/yyyy");
+      
+      // Create the memory card object
+      const memoryCard = {
+        id: cardId,
+        eventName: formData.eventName,
+        personName: formData.personName,
+        celebrationDate: formData.celebrationDate ? format(formData.celebrationDate, "dd/MM/yyyy") : "",
+        spotifyLink: formData.spotifyLink,
+        emoji: formData.emoji,
+        theme: formData.theme,
+        photos: formData.photos,
+        createdAt,
+        expiresAt
+      };
+      
+      // Save the memory card to storage
+      saveMemoryCard(memoryCard);
+      
       toast({
         title: "Pagamento confirmado!",
         description: "Seu cartão de memória foi salvo na sua dashboard.",
       });
-      setStep("form");
+      
+      // Navigate to dashboard after successful payment
+      navigate("/dashboard");
+      
       // Reset form data after successful payment
       setFormData({
         eventName: "",

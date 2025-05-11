@@ -1,41 +1,20 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
-type MemoryCard = {
-  id: string;
-  eventName: string;
-  personName: string;
-  celebrationDate: string;
-  createdAt: string;
-  expiresAt: string;
-};
-
-// Mock data for the dashboard
-const mockMemoryCards: MemoryCard[] = [
-  {
-    id: "memory-1",
-    eventName: "Aniversário de Casamento",
-    personName: "Maria e João",
-    celebrationDate: "15/06/2025",
-    createdAt: "15/06/2024",
-    expiresAt: "15/06/2025",
-  },
-  {
-    id: "memory-2",
-    eventName: "Dia das Mães",
-    personName: "Ana Silva",
-    celebrationDate: "14/05/2025",
-    createdAt: "10/05/2024",
-    expiresAt: "10/05/2025",
-  },
-];
+import { getMemoryCards, MemoryCard } from "@/utils/storage";
 
 export const UserDashboard = () => {
   const navigate = useNavigate();
+  const [memoryCards, setMemoryCards] = useState<MemoryCard[]>([]);
+  
+  useEffect(() => {
+    // Load memory cards from storage when component mounts
+    const cards = getMemoryCards();
+    setMemoryCards(cards);
+  }, []);
   
   const copyLinkToClipboard = (id: string) => {
     // Get the current base URL from the window location
@@ -56,49 +35,56 @@ export const UserDashboard = () => {
         Meus Cartões de Memória
       </h1>
 
-      <div className="grid gap-6">
-        {mockMemoryCards.map((card) => (
-          <Card key={card.id} className="overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-purple-100 to-pink-100">
-              <CardTitle>{card.eventName}</CardTitle>
-              <CardDescription className="text-gray-700">
-                {card.personName}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="grid gap-2 md:grid-cols-2 text-sm">
-                <div>
-                  <p className="font-medium">Data da Celebração:</p>
-                  <p>{card.celebrationDate}</p>
+      {memoryCards.length === 0 ? (
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <p className="text-gray-600 mb-4">Você ainda não criou nenhum cartão de memória.</p>
+          <Button onClick={() => navigate("/")}>Criar Meu Primeiro Cartão</Button>
+        </div>
+      ) : (
+        <div className="grid gap-6">
+          {memoryCards.map((card) => (
+            <Card key={card.id} className="overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-purple-100 to-pink-100">
+                <CardTitle>{card.eventName}</CardTitle>
+                <CardDescription className="text-gray-700">
+                  {card.personName}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="grid gap-2 md:grid-cols-2 text-sm">
+                  <div>
+                    <p className="font-medium">Data da Celebração:</p>
+                    <p>{card.celebrationDate}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Criado em:</p>
+                    <p>{card.createdAt}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Expira em:</p>
+                    <p>{card.expiresAt}</p>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyLinkToClipboard(card.id)}
+                    >
+                      Copiar Link
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={() => viewCard(card.id)}
+                    >
+                      Ver Cartão
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium">Criado em:</p>
-                  <p>{card.createdAt}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Expira em:</p>
-                  <p>{card.expiresAt}</p>
-                </div>
-                <div className="flex gap-2 items-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyLinkToClipboard(card.id)}
-                  >
-                    Copiar Link
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    onClick={() => viewCard(card.id)}
-                  >
-                    Ver Cartão
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
