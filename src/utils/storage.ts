@@ -81,7 +81,9 @@ const calculateTotalStorageUsed = (cards: MemoryCard[]): number => {
 export const getMemoryCards = (): MemoryCard[] => {
   try {
     const cardsJSON = localStorage.getItem(STORAGE_KEY);
-    return cardsJSON ? JSON.parse(cardsJSON) : [];
+    const cards = cardsJSON ? JSON.parse(cardsJSON) : [];
+    console.log(`Recuperados ${cards.length} cartões do localStorage`);
+    return cards;
   } catch (error) {
     console.error("Erro ao recuperar cartões da memória:", error);
     return [];
@@ -153,9 +155,11 @@ export const saveMemoryCard = async (card: MemoryCard): Promise<boolean> => {
     
     if (index >= 0) {
       // Update existing card
+      console.log(`Atualizando cartão existente: ${card.id}`);
       cards[index] = processedCard;
     } else {
       // Add new card
+      console.log(`Adicionando novo cartão: ${card.id}`);
       cards.push(processedCard);
     }
     
@@ -168,9 +172,15 @@ export const saveMemoryCard = async (card: MemoryCard): Promise<boolean> => {
       return false;
     }
     
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
-    console.log("Cartão salvo com sucesso:", processedCard.id);
-    return true;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+      console.log(`${cards.length} cartões salvos com sucesso no localStorage`);
+      console.log("IDs dos cartões salvos:", cards.map(c => c.id).join(", "));
+      return true;
+    } catch (e) {
+      console.error("Erro ao salvar no localStorage:", e);
+      return false;
+    }
   } catch (error) {
     console.error("Erro ao salvar cartão de memória:", error);
     if (error instanceof DOMException && error.name === 'QuotaExceededError') {
@@ -183,12 +193,21 @@ export const saveMemoryCard = async (card: MemoryCard): Promise<boolean> => {
 // Get a specific memory card by ID
 export const getMemoryCardById = (id: string): MemoryCard | undefined => {
   try {
+    if (!id) {
+      console.error("ID de cartão inválido:", id);
+      return undefined;
+    }
+    
     const cards = getMemoryCards();
+    console.log(`Buscando cartão ${id} entre ${cards.length} cartões disponíveis`);
+    
     const card = cards.find(card => card.id === id);
     if (card) {
       console.log("Cartão encontrado:", id);
     } else {
       console.log("Cartão não encontrado:", id);
+      // Listar todos os IDs para depuração
+      console.log("IDs disponíveis:", cards.map(c => c.id).join(", "));
     }
     return card;
   } catch (error) {

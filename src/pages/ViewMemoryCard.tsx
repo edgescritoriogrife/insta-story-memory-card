@@ -126,26 +126,40 @@ const ViewMemoryCard = () => {
 
   useEffect(() => {
     if (id) {
-      // Tenta obter o cartão do armazenamento primeiro
+      // Tenta obter o cartão do armazenamento
       const storedCard = getMemoryCardById(id);
       
+      console.log("Tentando carregar cartão:", id);
+      console.log("Resultado da busca:", storedCard ? "Encontrado" : "Não encontrado");
+      
       if (storedCard) {
-        // Converte datas de string para objetos Date para formatação da UI
-        const convertedCard = {
-          ...storedCard,
-          celebrationDate: parseDate(storedCard.celebrationDate)
-        };
-        setCardData(convertedCard);
-        
-        // Registra que encontramos o cartão
-        console.log("Cartão carregado do armazenamento:", id);
+        try {
+          // Converte datas de string para objetos Date para formatação da UI se necessário
+          const dateObj = parseDate(storedCard.celebrationDate);
+          
+          const convertedCard = {
+            ...storedCard,
+            // Só converte se conseguiu fazer o parsing, senão mantém a string original
+            celebrationDate: dateObj || storedCard.celebrationDate
+          };
+          
+          setCardData(convertedCard);
+          console.log("Cartão carregado do armazenamento:", id);
+        } catch (error) {
+          console.error("Erro ao processar cartão:", error);
+          // Mesmo com erro de processamento, usa o cartão original
+          setCardData(storedCard);
+          toast.error("Erro ao processar dados do cartão");
+        }
       } 
       // Volta para dados simulados se não encontrado no armazenamento
       else if (id in mockCards) {
         setCardData(mockCards[id as keyof typeof mockCards]);
         console.log("Usando dados simulados para:", id);
+        toast("Usando dados de exemplo (cartão não encontrado no armazenamento)");
       } else {
         console.log("Cartão não encontrado:", id);
+        toast.error("Cartão não encontrado");
       }
     }
   }, [id]);
@@ -153,6 +167,8 @@ const ViewMemoryCard = () => {
   // Função auxiliar para analisar strings de data
   const parseDate = (dateString: string): Date | undefined => {
     try {
+      if (!dateString) return undefined;
+      
       const parts = dateString.split('/');
       if (parts.length === 3) {
         const [day, month, year] = parts.map(Number);
