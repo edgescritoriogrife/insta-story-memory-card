@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,12 +8,12 @@ import { Music, Pause, Play } from "lucide-react";
 import { getMemoryCardById, MemoryCard } from "@/utils/storage";
 import { toast } from "sonner";
 
-// Mock data - In a real app, this would come from an API
+// Dados simulados - Em um aplicativo real, isso viria de uma API
 const mockCards = {
   "memory-1": {
     eventName: "Aniversário de Casamento",
     personName: "Maria e João",
-    celebrationDate: new Date(2025, 5, 15), // June 15, 2025
+    celebrationDate: new Date(2025, 5, 15), // 15 de junho de 2025
     spotifyLink: "https://open.spotify.com/track/123456",
     emoji: "❤️",
     theme: "pink",
@@ -22,7 +23,7 @@ const mockCards = {
   "memory-2": {
     eventName: "Dia das Mães",
     personName: "Ana Silva",
-    celebrationDate: new Date(2025, 4, 14), // May 14, 2025
+    celebrationDate: new Date(2025, 4, 14), // 14 de maio de 2025
     spotifyLink: "https://open.spotify.com/track/654321",
     emoji: "💐",
     theme: "purple",
@@ -71,13 +72,13 @@ const EmojiAnimation = ({ emoji }: EmojiAnimationProps) => {
   );
 };
 
-// New component for the music player
+// Componente para o player de música
 const MusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   
   useEffect(() => {
-    // Clean up audio when component unmounts
+    // Limpa o áudio quando o componente é desmontado
     return () => {
       if (audio) {
         audio.pause();
@@ -86,12 +87,12 @@ const MusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
     };
   }, [audio]);
 
-  // Function to extract track ID from Spotify URL
+  // Função para extrair o ID da faixa do link do Spotify
   const getSpotifyEmbedUrl = (spotifyLink?: string) => {
     if (!spotifyLink) return null;
     
     try {
-      // Handle different Spotify URL formats
+      // Lida com diferentes formatos de URL do Spotify
       let trackId = '';
       
       if (spotifyLink.includes('/track/')) {
@@ -102,10 +103,10 @@ const MusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
       
       if (!trackId) return null;
       
-      // Return the embed URL format
+      // Retorna o formato de URL incorporado
       return `https://open.spotify.com/embed/track/${trackId}`;
     } catch (error) {
-      console.error("Error parsing Spotify link:", error);
+      console.error("Erro ao analisar link do Spotify:", error);
       return null;
     }
   };
@@ -114,25 +115,25 @@ const MusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
     if (!spotifyLink) return;
     
     if (!audio) {
-      // If audio hasn't been initialized yet, create it
+      // Se o áudio ainda não foi inicializado, crie-o
       const newAudio = new Audio(spotifyLink);
       newAudio.addEventListener('ended', () => setIsPlaying(false));
       newAudio.addEventListener('error', (e) => {
-        toast.error("Erro ao reproduzir música");
-        console.error("Audio error:", e);
+        toast.error("Não foi possível reproduzir esta música");
+        console.error("Erro de áudio:", e);
         setIsPlaying(false);
       });
       setAudio(newAudio);
       
-      // Start playing
+      // Começa a tocar
       newAudio.play()
         .then(() => setIsPlaying(true))
         .catch(err => {
-          console.error("Error playing audio:", err);
+          console.error("Erro ao reproduzir áudio:", err);
           toast.error("Não foi possível reproduzir esta música");
         });
     } else {
-      // Toggle play/pause on existing audio
+      // Alterna play/pause no áudio existente
       if (isPlaying) {
         audio.pause();
         setIsPlaying(false);
@@ -140,7 +141,7 @@ const MusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
         audio.play()
           .then(() => setIsPlaying(true))
           .catch(err => {
-            console.error("Error playing audio:", err);
+            console.error("Erro ao reproduzir áudio:", err);
             toast.error("Não foi possível reproduzir esta música");
           });
       }
@@ -164,7 +165,7 @@ const MusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
         </div>
       )}
       
-      {/* Hidden iframe for Spotify embed (fallback) */}
+      {/* iframe oculto para incorporação do Spotify (fallback) */}
       {embedUrl && (
         <iframe 
           src={embedUrl} 
@@ -187,25 +188,31 @@ const ViewMemoryCard = () => {
 
   useEffect(() => {
     if (id) {
-      // Try to get the card from storage first
+      // Tenta obter o cartão do armazenamento primeiro
       const storedCard = getMemoryCardById(id);
       
       if (storedCard) {
-        // Convert string dates to Date objects for UI formatting
+        // Converte datas de string para objetos Date para formatação da UI
         const convertedCard = {
           ...storedCard,
           celebrationDate: parseDate(storedCard.celebrationDate)
         };
         setCardData(convertedCard);
+        
+        // Registra que encontramos o cartão
+        console.log("Cartão carregado do armazenamento:", id);
       } 
-      // Fallback to mock data if not found in storage
+      // Volta para dados simulados se não encontrado no armazenamento
       else if (id in mockCards) {
         setCardData(mockCards[id as keyof typeof mockCards]);
+        console.log("Usando dados simulados para:", id);
+      } else {
+        console.log("Cartão não encontrado:", id);
       }
     }
   }, [id]);
   
-  // Helper function to parse date strings
+  // Função auxiliar para analisar strings de data
   const parseDate = (dateString: string): Date | undefined => {
     try {
       const parts = dateString.split('/');
@@ -215,17 +222,17 @@ const ViewMemoryCard = () => {
       }
       return undefined;
     } catch (error) {
-      console.error("Error parsing date:", error);
+      console.error("Erro ao analisar data:", error);
       return undefined;
     }
   };
 
-  // Auto slideshow for photos
+  // Apresentação de slides automática para fotos
   useEffect(() => {
     if (cardData?.photos && cardData.photos.length > 1) {
       const interval = setInterval(() => {
         setCurrentPhotoIndex((prev) => (prev + 1) % cardData.photos.length);
-      }, 3000); // Change photo every 3 seconds
+      }, 3000); // Muda a foto a cada 3 segundos
       
       return () => clearInterval(interval);
     }
@@ -249,7 +256,7 @@ const ViewMemoryCard = () => {
     try {
       return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     } catch (error) {
-      console.error("Date formatting error:", error);
+      console.error("Erro de formatação de data:", error);
       return "";
     }
   };
@@ -276,7 +283,7 @@ const ViewMemoryCard = () => {
       >
         <EmojiAnimation emoji={cardData.emoji} />
         
-        {/* Full-screen background image with slideshow */}
+        {/* Imagem de fundo em tela cheia com apresentação de slides */}
         <div className="absolute inset-0 w-full h-full z-0">
           {cardData.photos && cardData.photos.length > 0 && (
             <>
@@ -294,7 +301,7 @@ const ViewMemoryCard = () => {
                   />
                 </div>
               ))}
-              {/* Overlay to ensure text remains readable */}
+              {/* Sobreposição para garantir que o texto permaneça legível */}
               <div className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-10"></div>
             </>
           )}
@@ -313,7 +320,7 @@ const ViewMemoryCard = () => {
             </h2>
           </div>
           
-          {/* Main content area */}
+          {/* Área de conteúdo principal */}
           <div className="flex flex-col items-center mb-4">
             {cardData.celebrationDate && (
               <div className="mb-4 text-center">
@@ -327,7 +334,7 @@ const ViewMemoryCard = () => {
             )}
           </div>
           
-          {/* Footer section with music player at very bottom */}
+          {/* Seção de rodapé com player de música na parte inferior */}
           <div className="w-full mt-auto flex flex-col items-center space-y-4">
             <div className="w-16 h-1 bg-white opacity-60"></div>
             
@@ -335,7 +342,7 @@ const ViewMemoryCard = () => {
               Cartão de Memória • Com carinho
             </div>
             
-            {/* Music player positioned at the very bottom */}
+            {/* Player de música posicionado na parte inferior */}
             <MusicPlayer spotifyLink={cardData.spotifyLink} />
           </div>
         </div>

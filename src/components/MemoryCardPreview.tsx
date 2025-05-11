@@ -1,7 +1,9 @@
+
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Music, Pause, Play } from "lucide-react";
+import { toast } from "sonner";
 
 type MemoryCardData = {
   eventName: string;
@@ -53,13 +55,13 @@ const EmojiAnimation = ({ emoji }: EmojiAnimationProps) => {
   );
 };
 
-// New component for the music player in preview mode
+// Componente para o player de música no modo de pré-visualização
 const PreviewMusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // Clean up audio when component unmounts
+    // Limpa o áudio quando o componente é desmontado
     return () => {
       if (audio) {
         audio.pause();
@@ -68,18 +70,49 @@ const PreviewMusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
     };
   }, [audio]);
 
+  // Função para extrair o ID da faixa do link do Spotify
+  const getSpotifyEmbedUrl = (spotifyLink?: string) => {
+    if (!spotifyLink) return null;
+    
+    try {
+      // Lida com diferentes formatos de URL do Spotify
+      let trackId = '';
+      
+      if (spotifyLink.includes('/track/')) {
+        trackId = spotifyLink.split('/track/')[1].split('?')[0];
+      } else if (spotifyLink.includes('spotify:track:')) {
+        trackId = spotifyLink.split('spotify:track:')[1];
+      }
+      
+      if (!trackId) return null;
+      
+      // Retorna o formato de URL incorporado
+      return `https://open.spotify.com/embed/track/${trackId}`;
+    } catch (error) {
+      console.error("Erro ao analisar link do Spotify:", error);
+      return null;
+    }
+  };
+
   const togglePlay = () => {
     if (!spotifyLink) return;
 
     if (!audio) {
       const newAudio = new Audio(spotifyLink);
       newAudio.addEventListener('ended', () => setIsPlaying(false));
+      newAudio.addEventListener('error', (e) => {
+        toast.error("Não foi possível reproduzir esta música");
+        console.error("Erro de áudio:", e);
+        setIsPlaying(false);
+      });
+      
       setAudio(newAudio);
       
       newAudio.play()
         .then(() => setIsPlaying(true))
         .catch(err => {
-          console.error("Error playing audio:", err);
+          console.error("Erro ao reproduzir áudio:", err);
+          toast.error("Não foi possível reproduzir esta música");
         });
     } else {
       if (isPlaying) {
@@ -89,11 +122,14 @@ const PreviewMusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
         audio.play()
           .then(() => setIsPlaying(true))
           .catch(err => {
-            console.error("Error playing audio:", err);
+            console.error("Erro ao reproduzir áudio:", err);
+            toast.error("Não foi possível reproduzir esta música");
           });
       }
     }
   };
+
+  const embedUrl = getSpotifyEmbedUrl(spotifyLink);
 
   return (
     <div className="w-full">
@@ -109,6 +145,19 @@ const PreviewMusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
           </button>
         </div>
       )}
+      
+      {/* iframe oculto para incorporação do Spotify (fallback) */}
+      {embedUrl && (
+        <iframe 
+          src={embedUrl} 
+          width="0" 
+          height="0" 
+          frameBorder="0" 
+          allow="encrypted-media"
+          title="Spotify Player"
+          style={{display: 'none'}}
+        ></iframe>
+      )}
     </div>
   );
 };
@@ -116,12 +165,12 @@ const PreviewMusicPlayer = ({ spotifyLink }: { spotifyLink?: string }) => {
 export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
-  // Auto slideshow for photos
+  // Apresentação de slides automática para fotos
   useEffect(() => {
     if (data.photos && data.photos.length > 1) {
       const interval = setInterval(() => {
         setCurrentPhotoIndex((prev) => (prev + 1) % data.photos!.length);
-      }, 3000); // Change photo every 3 seconds
+      }, 3000); // Muda a foto a cada 3 segundos
       
       return () => clearInterval(interval);
     }
@@ -145,14 +194,9 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
     try {
       return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     } catch (error) {
-      console.error("Date formatting error:", error);
+      console.error("Erro de formatação de data:", error);
       return "";
     }
-  };
-
-  const extractSpotifyArtist = (link: string) => {
-    // This is a simple placeholder. In a real app, you might extract artist name from the link
-    return "Música especial";
   };
 
   return (
@@ -163,7 +207,7 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
     >
       <EmojiAnimation emoji={data.emoji} />
       
-      {/* Full-screen background image with slideshow */}
+      {/* Imagem de fundo em tela cheia com apresentação de slides */}
       <div className="absolute inset-0 w-full h-full z-0 transition-opacity duration-1000 ease-in-out">
         {data.photos && data.photos.length > 0 && (
           <>
@@ -181,7 +225,7 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
                 />
               </div>
             ))}
-            {/* Overlay to ensure text remains readable */}
+            {/* Sobreposição para garantir que o texto permaneça legível */}
             <div className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-10"></div>
           </>
         )}
@@ -200,7 +244,7 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
           </h2>
         </div>
         
-        {/* Main content area */}
+        {/* Área de conteúdo principal */}
         <div className="flex flex-col items-center mb-4">
           {data.celebrationDate && (
             <div className="mb-4 text-center">
@@ -214,7 +258,7 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
           )}
         </div>
         
-        {/* Footer section with music player at very bottom */}
+        {/* Seção de rodapé com player de música na parte inferior */}
         <div className="w-full mt-auto flex flex-col items-center space-y-4">          
           <div className="w-16 h-1 bg-white opacity-60"></div>
           
@@ -222,7 +266,7 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
             Cartão de Memória • Acesso por 1 ano
           </div>
           
-          {/* Music player positioned at the very bottom */}
+          {/* Player de música posicionado na parte inferior */}
           <PreviewMusicPlayer spotifyLink={data.spotifyLink} />
         </div>
       </div>
