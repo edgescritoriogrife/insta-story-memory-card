@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Music, Pause, Play } from "lucide-react";
 import { toast } from "sonner";
+import { EmojiAnimation } from "./EmojiAnimation";
 
 type MemoryCardData = {
   eventName: string;
@@ -12,47 +13,8 @@ type MemoryCardData = {
   spotifyLink: string;
   emoji: string;
   theme: string;
+  message: string; // Nova propriedade para a mensagem
   photos: string[] | null;
-};
-
-type EmojiAnimationProps = {
-  emoji: string;
-};
-
-const EmojiAnimation = ({ emoji }: EmojiAnimationProps) => {
-  const [emojis, setEmojis] = useState<
-    Array<{ id: number; left: string; delay: string; duration: string }>
-  >([]);
-
-  useEffect(() => {
-    const newEmojis = Array.from({ length: 20 }).map((_, index) => {
-      return {
-        id: index,
-        left: `${Math.random() * 100}%`,
-        delay: `${Math.random() * 5}s`,
-        duration: `${2 + Math.random() * 3}s`,
-      };
-    });
-    setEmojis(newEmojis);
-  }, [emoji]);
-
-  return (
-    <div className="emoji-rain">
-      {emojis.map((item) => (
-        <span
-          key={item.id}
-          className="emoji"
-          style={{
-            left: item.left,
-            animationDelay: item.delay,
-            animationDuration: item.duration,
-          }}
-        >
-          {emoji}
-        </span>
-      ))}
-    </div>
-  );
 };
 
 // Componente para o player do Spotify no modo de pré-visualização
@@ -198,6 +160,15 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
                 </p>
               </div>
             )}
+            
+            {/* Exibição da mensagem personalizada */}
+            {data.message && (
+              <div className="mt-4 text-center px-4 py-3 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg">
+                <p className="text-white leading-relaxed italic">
+                  "{data.message}"
+                </p>
+              </div>
+            )}
           </div>
           
           {/* Seção de rodapé */}
@@ -220,4 +191,3 @@ export const MemoryCardPreview = ({ data }: { data: MemoryCardData }) => {
     </div>
   );
 };
-

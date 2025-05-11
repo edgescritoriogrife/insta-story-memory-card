@@ -10,6 +10,7 @@ type MemoryCardContentProps = {
     celebrationDate: Date | undefined;
     emoji: string;
     theme: string;
+    message?: string; // Campo de mensagem opcional
     photos: string[] | undefined | null;
   };
 };
@@ -94,6 +95,15 @@ export const MemoryCardContent = ({ cardData }: MemoryCardContentProps) => {
               </p>
               <p className="text-lg font-medium text-white">
                 {formatDate(cardData.celebrationDate)}
+              </p>
+            </div>
+          )}
+          
+          {/* Exibição da mensagem personalizada */}
+          {cardData.message && (
+            <div className="mt-4 text-center px-4 py-3 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg">
+              <p className="text-white leading-relaxed italic">
+                "{cardData.message}"
               </p>
             </div>
           )}

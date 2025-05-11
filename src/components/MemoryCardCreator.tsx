@@ -1,10 +1,10 @@
-
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Music, Upload, Image, ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -32,6 +32,7 @@ type MemoryCardData = {
   spotifyLink: string;
   emoji: string;
   theme: string;
+  message: string; // Nova propriedade para a mensagem
   photos: string[] | null; // Changed from photo to photos array
 };
 
@@ -55,6 +56,7 @@ export const MemoryCardCreator = () => {
     spotifyLink: "",
     emoji: "❤️",
     theme: "pink",
+    message: "", // Inicialização do campo de mensagem
     photos: null,
   });
 
@@ -205,6 +207,7 @@ export const MemoryCardCreator = () => {
         spotifyLink: formData.spotifyLink,
         emoji: formData.emoji,
         theme: formData.theme,
+        message: formData.message, // Adicionando a mensagem ao cartão
         photos: formData.photos,
         createdAt,
         expiresAt
@@ -268,6 +271,20 @@ export const MemoryCardCreator = () => {
                 placeholder="Ex: Maria e João"
                 value={formData.personName}
                 onChange={handleChange}
+              />
+            </div>
+            
+            {/* Novo campo de mensagem */}
+            <div className="space-y-2">
+              <Label htmlFor="message">Mensagem Personalizada</Label>
+              <Textarea
+                id="message"
+                name="message"
+                placeholder="Escreva uma mensagem especial para este cartão..."
+                value={formData.message}
+                onChange={handleChange}
+                rows={4}
+                className="resize-none"
               />
             </div>
             
@@ -426,6 +443,12 @@ export const MemoryCardCreator = () => {
                 <p className="font-medium">Nome da Pessoa/Casal:</p>
                 <p>{formData.personName}</p>
               </div>
+              {formData.message && (
+                <div>
+                  <p className="font-medium">Mensagem:</p>
+                  <p className="text-sm">{formData.message}</p>
+                </div>
+              )}
               <div>
                 <p className="font-medium">Data da Celebração:</p>
                 <p>
@@ -487,4 +510,3 @@ export const MemoryCardCreator = () => {
     </div>
   );
 };
-
