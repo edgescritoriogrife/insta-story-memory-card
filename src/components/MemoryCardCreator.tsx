@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Music, Upload, Image, ArrowLeft, ArrowRight } from "lucide-react";
@@ -84,10 +85,8 @@ export const MemoryCardCreator = () => {
       Array.from(e.target.files).forEach((file) => {
         // Check file size (limit to 5MB)
         if (file.size > 5 * 1024 * 1024) {
-          toast({
-            title: "Arquivo muito grande",
-            description: `${file.name} é maior que 5MB. Será ignorado.`,
-            variant: "destructive",
+          toast.error("Arquivo muito grande", {
+            description: `${file.name} é maior que 5MB. Será ignorado.`
           });
           processedFiles++;
           return;
@@ -95,10 +94,8 @@ export const MemoryCardCreator = () => {
 
         // Check file type
         if (!file.type.startsWith('image/')) {
-          toast({
-            title: "Tipo de arquivo inválido",
-            description: `${file.name} não é uma imagem válida. Será ignorado.`,
-            variant: "destructive",
+          toast.error("Tipo de arquivo inválido", {
+            description: `${file.name} não é uma imagem válida. Será ignorado.`
           });
           processedFiles++;
           return;
@@ -147,37 +144,29 @@ export const MemoryCardCreator = () => {
     
     // Simple validation
     if (!formData.eventName) {
-      toast({
-        title: "Campo obrigatório",
-        description: "Por favor, informe o nome do evento.",
-        variant: "destructive",
+      toast.error("Campo obrigatório", {
+        description: "Por favor, informe o nome do evento."
       });
       return;
     }
     
     if (!formData.personName) {
-      toast({
-        title: "Campo obrigatório",
-        description: "Por favor, informe o nome da pessoa ou casal.",
-        variant: "destructive",
+      toast.error("Campo obrigatório", {
+        description: "Por favor, informe o nome da pessoa ou casal."
       });
       return;
     }
     
     if (!formData.celebrationDate) {
-      toast({
-        title: "Campo obrigatório",
-        description: "Por favor, selecione a data da celebração.",
-        variant: "destructive",
+      toast.error("Campo obrigatório", {
+        description: "Por favor, selecione a data da celebração."
       });
       return;
     }
 
     if (formData.spotifyLink && !validateSpotifyLink(formData.spotifyLink)) {
-      toast({
-        title: "Link inválido",
-        description: "Por favor, insira um link válido do Spotify.",
-        variant: "destructive",
+      toast.error("Link inválido", {
+        description: "Por favor, insira um link válido do Spotify."
       });
       return;
     }
@@ -190,10 +179,13 @@ export const MemoryCardCreator = () => {
     setStep("processing");
     
     // This would be connected to a payment processor in a real app
-    toast.loading("Processando pagamento...", { duration: 2000 });
+    const toastId = toast.loading("Processando pagamento...");
     
     // Simulate payment processing
     setTimeout(() => {
+      // Dismiss the loading toast
+      toast.dismiss(toastId);
+      
       // Generate a unique ID for the memory card
       const cardId = `memory-${Date.now()}`;
       
@@ -222,16 +214,12 @@ export const MemoryCardCreator = () => {
       const saveSuccess = saveMemoryCard(memoryCard);
       
       if (saveSuccess) {
-        toast.success("Pagamento confirmado! Seu cartão foi salvo.", {
-          duration: 3000,
-        });
+        toast.success("Pagamento confirmado! Seu cartão foi salvo.");
         
         // Navigate to dashboard after successful payment
-        setTimeout(() => navigate("/dashboard"), 1000);
+        setTimeout(() => navigate(`/memory/${cardId}`), 1000);
       } else {
-        toast.error("Erro ao salvar o cartão. O armazenamento pode estar cheio.", {
-          duration: 5000,
-        });
+        toast.error("Erro ao salvar o cartão. O armazenamento pode estar cheio.");
         setStep("preview"); // Return to preview step so they can try again
       }
     }, 2000);
@@ -499,3 +487,4 @@ export const MemoryCardCreator = () => {
     </div>
   );
 };
+
