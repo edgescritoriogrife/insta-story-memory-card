@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { MemoryCard, SupabaseMemoryCard } from "@/utils/storage";
-import { formatRelativeDate } from "@/utils/dateUtils";
 
 // Função para converter o formato do banco de dados para o formato da aplicação
 const mapSupabaseToMemoryCard = (card: SupabaseMemoryCard): MemoryCard => {

@@ -1,4 +1,10 @@
-// Tipos para os cartões de memória
+
+import { v4 as uuidv4 } from 'uuid';
+
+// Chave para armazenamento local
+const STORAGE_KEY = 'memory_cards';
+
+// Definição dos tipos para os cartões de memória
 export interface MemoryCard {
   id: string;
   userId?: string;
@@ -14,6 +20,7 @@ export interface MemoryCard {
   photos?: string[];
 }
 
+// Formato do cartão no Supabase
 export interface SupabaseMemoryCard {
   id: string;
   user_id?: string;
@@ -29,233 +36,119 @@ export interface SupabaseMemoryCard {
   photos?: string[];
 }
 
-// Função para comprimir imagem usando canvas
-const compressImage = (base64: string, maxWidth: number = 800, quality: number = 0.7): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let width = img.width;
-      let height = img.height;
-      
-      // Redimensiona se a largura for maior que o máximo
-      if (width > maxWidth) {
-        height = Math.floor(height * maxWidth / width);
-        width = maxWidth;
+// Temas disponíveis para os cartões
+export const cardThemes = [
+  {
+    id: 'romantic',
+    name: 'Romântico',
+    bgColor: 'bg-gradient-to-b from-red-100 to-pink-200',
+    textColor: 'text-pink-900'
+  },
+  {
+    id: 'celebration',
+    name: 'Celebração',
+    bgColor: 'bg-gradient-to-b from-yellow-100 to-amber-200',
+    textColor: 'text-amber-900'
+  },
+  {
+    id: 'birthday',
+    name: 'Aniversário',
+    bgColor: 'bg-gradient-to-b from-purple-100 to-fuchsia-200',
+    textColor: 'text-fuchsia-900'
+  },
+  {
+    id: 'congrats',
+    name: 'Parabéns',
+    bgColor: 'bg-gradient-to-b from-blue-100 to-cyan-200',
+    textColor: 'text-cyan-900'
+  },
+  {
+    id: 'holiday',
+    name: 'Férias',
+    bgColor: 'bg-gradient-to-b from-green-100 to-emerald-200',
+    textColor: 'text-emerald-900'
+  }
+];
+
+// Classe para gerenciar o armazenamento de cartões
+class MemoryCardStorage {
+  private cards: MemoryCard[] = [];
+
+  constructor() {
+    this.loadFromLocalStorage();
+  }
+
+  // Carregar cartões do armazenamento local
+  private loadFromLocalStorage() {
+    try {
+      const savedCards = localStorage.getItem(STORAGE_KEY);
+      if (savedCards) {
+        this.cards = JSON.parse(savedCards);
       }
-      
-      canvas.width = width;
-      canvas.height = height;
-      
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Não foi possível obter o contexto do canvas'));
-        return;
-      }
-      
-      ctx.drawImage(img, 0, 0, width, height);
-      
-      // Converte de volta para base64 com qualidade reduzida
-      const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-      resolve(compressedBase64);
+    } catch (error) {
+      console.error('Erro ao carregar cartões:', error);
+      this.cards = [];
+    }
+  }
+
+  // Salvar cartões no armazenamento local
+  private saveToLocalStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.cards));
+    } catch (error) {
+      console.error('Erro ao salvar cartões:', error);
+    }
+  }
+
+  // Obter todos os cartões
+  getAll(): MemoryCard[] {
+    return [...this.cards];
+  }
+
+  // Obter um cartão específico pelo ID
+  getById(id: string): MemoryCard | undefined {
+    return this.cards.find(card => card.id === id);
+  }
+
+  // Adicionar um novo cartão
+  add(card: Omit<MemoryCard, 'id' | 'createdAt'>): MemoryCard {
+    const newCard: MemoryCard = {
+      ...card,
+      id: uuidv4(),
+      createdAt: new Date().toISOString()
     };
     
-    img.onerror = () => {
-      reject(new Error('Erro ao carregar a imagem para compressão'));
-    };
-    
-    img.src = base64;
-  });
-};
-
-// Estima o tamanho aproximado de uma string base64 em bytes
-const estimateBase64Size = (base64: string): number => {
-  // Remove cabeçalho data URI se presente
-  const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
-  // Equação para estimar o tamanho: tamanho_bytes = (n * 0.75) onde n é o comprimento da string base64
-  return Math.ceil(base64Data.length * 0.75);
-};
-
-// Calcula o espaço total usado pelos cartões em bytes
-const calculateTotalStorageUsed = (cards: MemoryCard[]): number => {
-  try {
-    let totalSize = 0;
-    const cardsJson = JSON.stringify(cards);
-    totalSize += cardsJson.length * 2; // Cada caractere UTF-16 usa 2 bytes
-    
-    return totalSize;
-  } catch (error) {
-    console.error("Erro ao calcular espaço de armazenamento:", error);
-    return 0;
+    this.cards.push(newCard);
+    this.saveToLocalStorage();
+    return newCard;
   }
-};
 
-// Get all memory cards from storage
-export const getMemoryCards = (): MemoryCard[] => {
-  try {
-    const cardsJSON = localStorage.getItem(STORAGE_KEY);
-    const cards = cardsJSON ? JSON.parse(cardsJSON) : [];
-    console.log(`Recuperados ${cards.length} cartões do localStorage`);
-    return cards;
-  } catch (error) {
-    console.error("Erro ao recuperar cartões da memória:", error);
-    return [];
-  }
-};
-
-// Limpar todos os cartões de memória
-export const clearAllMemoryCards = (): boolean => {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-    console.log("Todos os cartões foram removidos do localStorage");
-    return true;
-  } catch (error) {
-    console.error("Erro ao limpar cartões de memória:", error);
-    return false;
-  }
-};
-
-// Limpa cartões expirados para liberar espaço
-const cleanupExpiredCards = (): void => {
-  try {
-    const cards = getMemoryCards();
-    const now = new Date();
-    
-    // Filtra cartões expirados
-    const validCards = cards.filter(card => {
-      // Converte a data de expiração para um objeto Date (formato dd/MM/yyyy)
-      const [day, month, year] = card.expiresAt.split('/').map(Number);
-      const expiryDate = new Date(year, month - 1, day); // mês é base 0 em JS
-      return expiryDate > now;
-    });
-    
-    // Atualiza armazenamento se algum cartão foi removido
-    if (validCards.length < cards.length) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(validCards));
-      console.log(`Removidos ${cards.length - validCards.length} cartões expirados`);
-    }
-  } catch (error) {
-    console.error("Erro ao limpar cartões expirados:", error);
-  }
-};
-
-// Add a new memory card to storage
-export const saveMemoryCard = async (card: MemoryCard): Promise<boolean> => {
-  try {
-    // Primeiro, limpa cartões expirados para liberar espaço
-    cleanupExpiredCards();
-    
-    const cards = getMemoryCards();
-    // Check if card with same ID exists
-    const index = cards.findIndex(c => c.id === card.id);
-    
-    // Prepare the card object (copy to avoid modifying the original)
-    const processedCard = { ...card };
-    
-    // Se o cartão contém fotos, comprime-as
-    if (processedCard.photos && processedCard.photos.length > 0) {
-      // Limita a 3 fotos no máximo para reduzir uso de armazenamento
-      processedCard.photos = processedCard.photos.slice(0, 3);
-      
-      // Comprime cada foto
-      try {
-        const compressedPhotos = await Promise.all(processedCard.photos.map(async (photoData) => {
-          // Estima o tamanho da foto
-          const estimatedSize = estimateBase64Size(photoData);
-          
-          // Se a imagem for maior que 300KB, comprima-a
-          if (estimatedSize > 300 * 1024) {
-            console.log("Comprimindo foto grande para melhorar eficiência de armazenamento");
-            return await compressImage(photoData, 800, 0.7); 
-          }
-          return photoData;
-        }));
-        
-        processedCard.photos = compressedPhotos;
-      } catch (error) {
-        console.error("Erro ao comprimir fotos:", error);
-        // Continua com as fotos originais se houver erro na compressão
-      }
-    }
+  // Atualizar um cartão existente
+  update(updatedCard: MemoryCard): MemoryCard {
+    const index = this.cards.findIndex(card => card.id === updatedCard.id);
     
     if (index >= 0) {
-      // Update existing card
-      console.log(`Atualizando cartão existente: ${card.id}`);
-      cards[index] = processedCard;
-    } else {
-      // Add new card
-      console.log(`Adicionando novo cartão: ${card.id}`);
-      cards.push(processedCard);
+      this.cards[index] = updatedCard;
+      this.saveToLocalStorage();
+      return updatedCard;
     }
     
-    // Verifica se o tamanho total do armazenamento excederá o limite
-    const totalSize = calculateTotalStorageUsed(cards);
-    const storageLimit = 5 * 1024 * 1024; // 5MB limite aproximado
+    throw new Error(`Cartão com ID ${updatedCard.id} não encontrado.`);
+  }
+
+  // Excluir um cartão
+  delete(id: string): boolean {
+    const initialLength = this.cards.length;
+    this.cards = this.cards.filter(card => card.id !== id);
     
-    if (totalSize > storageLimit) {
-      console.error("Armazenamento excede o limite de 5MB. Não é possível salvar mais cartões.");
-      return false;
+    if (this.cards.length !== initialLength) {
+      this.saveToLocalStorage();
+      return true;
     }
     
-    try {
-      // Garantir que salvamos o cartão no localStorage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
-      
-      // Verificar se o cartão foi realmente salvo lendo de volta
-      const verifyCards = getMemoryCards();
-      const savedCard = verifyCards.find(c => c.id === card.id);
-      
-      if (savedCard) {
-        console.log(`Cartão ${card.id} verificado e confirmado no localStorage`);
-        console.log(`Total de ${verifyCards.length} cartões salvos com sucesso`);
-        console.log("IDs dos cartões salvos:", verifyCards.map(c => c.id).join(", "));
-        return true;
-      } else {
-        console.error(`Erro: Cartão ${card.id} não foi encontrado após tentativa de salvamento`);
-        return false;
-      }
-    } catch (e) {
-      console.error("Erro ao salvar no localStorage:", e);
-      return false;
-    }
-  } catch (error) {
-    console.error("Erro ao salvar cartão de memória:", error);
-    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-      console.error("Cota de armazenamento excedida. Tente remover alguns cartões existentes primeiro.");
-    }
     return false;
   }
-};
+}
 
-// Get a specific memory card by ID
-export const getMemoryCardById = (id: string): MemoryCard | undefined => {
-  try {
-    if (!id) {
-      console.error("ID de cartão inválido:", id);
-      return undefined;
-    }
-    
-    const cards = getMemoryCards();
-    console.log(`Buscando cartão ${id} entre ${cards.length} cartões disponíveis`);
-    
-    const card = cards.find(card => card.id === id);
-    if (card) {
-      console.log("Cartão encontrado:", id);
-    } else {
-      console.log("Cartão não encontrado:", id);
-      // Listar todos os IDs para depuração
-      console.log("IDs disponíveis:", cards.map(c => c.id).join(", "));
-    }
-    return card;
-  } catch (error) {
-    console.error("Erro ao buscar cartão por ID:", error);
-    return undefined;
-  }
-};
-
-// Delete a memory card by ID
-export const deleteMemoryCard = (id: string): void => {
-  const cards = getMemoryCards();
-  const filteredCards = cards.filter(card => card.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredCards));
-};
+// Exportar uma instância da classe de armazenamento
+export const memoryCardStorage = new MemoryCardStorage();
