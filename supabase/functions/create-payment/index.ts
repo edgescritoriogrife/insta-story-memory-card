@@ -106,7 +106,7 @@ serve(async (req) => {
         }
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/dashboard?payment=success&card_id=${cardId}`,
+      success_url: `${req.headers.get("origin")}/dashboard?payment=success&session_id=${session.id}&card_id=${cardId}`,
       cancel_url: `${req.headers.get("origin")}/dashboard?payment=canceled&card_id=${cardId}`
     });
 
