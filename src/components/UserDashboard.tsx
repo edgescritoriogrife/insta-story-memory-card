@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,11 +22,12 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ hideHeader = false
   const [loading, setLoading] = useState(true);
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
   
-  // Extrair parâmetros da URL para verificar status de pagamento
+  // Extrair parâmetros da URL para verificar status de pagamento e novos cartões
   const queryParams = new URLSearchParams(location.search);
   const paymentStatus = queryParams.get('payment');
   const cardId = queryParams.get('card_id');
   const sessionId = queryParams.get('session_id');
+  const newCardId = queryParams.get('new_card');
   
   useEffect(() => {
     // Verificar se o usuário está autenticado
@@ -53,7 +53,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ hideHeader = false
       // Limpar parâmetros da URL
       navigate('/dashboard', { replace: true });
     }
-  }, [user, navigate, paymentStatus, cardId, sessionId]);
+    
+    // Destacar cartão recém-criado, se houver
+    if (newCardId) {
+      toast.info("Seu cartão foi criado! Agora você pode efetuar o pagamento para ativá-lo.");
+      // Limpar parâmetros da URL, mas mantemos o cartão em destaque
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate, paymentStatus, cardId, sessionId, newCardId]);
   
   // Função para verificar pagamento
   const verifyPayment = async (sessionId: string) => {
@@ -183,7 +190,10 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ hideHeader = false
       ) : (
         <div className="grid gap-6">
           {memoryCards.map((card) => (
-            <Card key={card.id} className="overflow-hidden">
+            <Card 
+              key={card.id} 
+              className={`overflow-hidden ${newCardId === card.id ? 'ring-2 ring-green-500' : ''}`}
+            >
               <CardHeader className="bg-gradient-to-r from-purple-100 to-pink-100">
                 <div className="flex justify-between items-start">
                   <div>

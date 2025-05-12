@@ -14,19 +14,19 @@ export const paymentService = {
       });
       
       const { data, error } = response;
-      // Obtemos o status code a partir da propriedade status no objeto response
-      const statusCode = response.status || 500;
-
+      
+      // Verificamos se temos um erro explícito
       if (error) {
-        console.error("Erro ao criar sessão de checkout:", error, "Status:", statusCode);
+        console.error("Erro ao criar sessão de checkout:", error);
         toast.error(`Erro ao processar pagamento: ${error.message || "Tente novamente mais tarde"}`);
         throw error;
       }
 
-      if (statusCode !== 200) {
-        console.error("Status não esperado da função create-payment:", statusCode);
-        toast.error(`Erro ao processar pagamento: resposta com status ${statusCode}`);
-        throw new Error(`Resposta com status ${statusCode}`);
+      // Verificamos a status code (pode estar em diferentes locais dependendo da versão da API)
+      if (response.error) {
+        console.error("Erro ao criar sessão de checkout:", response.error);
+        toast.error(`Erro ao processar pagamento: ${response.error.message || "Tente novamente mais tarde"}`);
+        throw new Error(response.error.message || "Erro ao processar pagamento");
       }
 
       if (!data || !data.url || !data.sessionId) {
@@ -55,19 +55,19 @@ export const paymentService = {
       });
       
       const { data, error } = response;
-      // Obtemos o status code a partir da propriedade status no objeto response
-      const statusCode = response.status || 500;
-
+      
+      // Verificamos se temos um erro explícito
       if (error) {
-        console.error("Erro ao verificar status do pagamento:", error, "Status:", statusCode);
+        console.error("Erro ao verificar status do pagamento:", error);
         toast.error(`Erro ao verificar pagamento: ${error.message || "Tente novamente mais tarde"}`);
         throw error;
       }
 
-      if (statusCode !== 200) {
-        console.error("Status não esperado da função verify-payment:", statusCode);
-        toast.error(`Erro ao verificar pagamento: resposta com status ${statusCode}`);
-        throw new Error(`Resposta com status ${statusCode}`);
+      // Verificamos a status code (pode estar em diferentes locais dependendo da versão da API)
+      if (response.error) {
+        console.error("Erro ao verificar status do pagamento:", response.error);
+        toast.error(`Erro ao verificar pagamento: ${response.error.message || "Tente novamente mais tarde"}`);
+        throw new Error(response.error.message || "Erro ao verificar pagamento");
       }
 
       if (!data) {

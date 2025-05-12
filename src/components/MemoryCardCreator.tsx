@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ const MemoryCardCreator = () => {
   const [expiresAt, setExpiresAt] = useState<Date | undefined>(new Date(new Date().setDate(new Date().getDate() + 30)));
   const [loading, setLoading] = useState(false);
   const [isUserAuthenticated, setIsUserAuthenticated] = useState<boolean | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   
   const navigate = useNavigate();
   
@@ -159,28 +160,62 @@ const MemoryCardCreator = () => {
     setPhotos(prevPhotos => prevPhotos.filter((_, index) => index !== indexToRemove));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    
+    if (!eventName || !personName || !date) {
+      toast.error("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
+    
+    if (!isUserAuthenticated) {
+      toast.error("Você precisa estar logado para salvar um cartão.");
+      navigate('/auth');
+      return;
+    }
 
-    const cardId = uuidv4();
-    const formattedDate = date ? date.toISOString() : new Date().toISOString();
-    const formattedExpiresAt = expiresAt ? expiresAt.toISOString() : new Date(new Date().setDate(new Date().getDate() + 30)).toISOString();
+    try {
+      setSubmitting(true);
+      toast.loading("Salvando seu cartão...");
 
-    const cardData: MemoryCard = {
-      id: cardId,
-      eventName,
-      personName,
-      celebrationDate: formattedDate,
-      spotifyLink,
-      emoji,
-      theme,
-      message,
-      photos,
-      createdAt: new Date().toISOString(),
-      expiresAt: formattedExpiresAt,
-    };
+      const cardId = uuidv4();
+      const formattedDate = date ? date.toISOString() : new Date().toISOString();
+      const formattedExpiresAt = expiresAt ? expiresAt.toISOString() : new Date(new Date().setDate(new Date().getDate() + 30)).toISOString();
 
-    handleSave(cardData);
+      const cardData: MemoryCard = {
+        id: cardId,
+        eventName,
+        personName,
+        celebrationDate: formattedDate,
+        spotifyLink,
+        emoji,
+        theme,
+        message,
+        photos,
+        createdAt: new Date().toISOString(),
+        expiresAt: formattedExpiresAt,
+      };
+
+      // Salvar o cartão no Supabase
+      const savedCard = await supabaseService.saveMemoryCard(cardData);
+
+      if (savedCard) {
+        toast.success("Cartão criado com sucesso!");
+        // Redirecionar para o dashboard com um parâmetro de consulta para destacar o novo cartão
+        navigate("/dashboard?new_card=" + savedCard.id);
+      }
+    } catch (error) {
+      console.error("Erro ao salvar o cartão:", error);
+      
+      // Se o erro for de autenticação, redirecionar para login
+      if (error instanceof Error && error.message === "Usuário não autenticado") {
+        navigate('/auth');
+      } else {
+        toast.error("Erro ao salvar o cartão. Verifique se você está logado.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Se o status de autenticação ainda estiver sendo verificado, mostre um indicador de carregamento
@@ -377,7 +412,7 @@ const MemoryCardCreator = () => {
             ))}
           </div>
         </div>
-        <Button type="submit" disabled={loading} className="w-full">
+        <Button type="submit" disabled={loading || submitting} className="w-full">
           {loading ? "Salvando..." : "Salvar Cartão"}
         </Button>
       </form>
