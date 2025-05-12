@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 import { AuthForm } from "@/components/AuthForm";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
+import { toast } from "sonner";
 
 const Auth = () => {
   const { user, isLoading } = useAuth();
@@ -13,6 +14,17 @@ const Auth = () => {
       navigate("/");
     }
   }, [user, isLoading, navigate]);
+
+  // Verificar se há um hash na URL que indica um redirecionamento OAuth
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const error = hashParams.get('error');
+    const errorDescription = hashParams.get('error_description');
+    
+    if (error) {
+      toast.error(`Erro de autenticação: ${errorDescription || error}`);
+    }
+  }, []);
 
   const handleAuthSuccess = () => {
     navigate("/");
