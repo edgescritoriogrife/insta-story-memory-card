@@ -1,20 +1,42 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MemoryCardCreator } from "@/components/MemoryCardCreator";
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
+import { Heart, LogIn, LogOut } from "lucide-react";
+import { useAuth } from "@/providers/AuthProvider";
 
 const Index = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-pink-50">
       <header className="container mx-auto px-4 py-6">
         <nav className="flex justify-between items-center">
           <div className="text-2xl font-bold fancy-text text-purple-700">MemóriasCard</div>
           <div className="flex gap-4">
-            <Button variant="outline" asChild>
-              <Link to="/dashboard">Meus Cartões</Link>
-            </Button>
+            {user ? (
+              <>
+                <Button variant="outline" asChild>
+                  <Link to="/dashboard">Meus Cartões</Link>
+                </Button>
+                <Button variant="ghost" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" /> Sair
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" asChild>
+                <Link to="/auth">
+                  <LogIn className="h-4 w-4 mr-2" /> Entrar
+                </Link>
+              </Button>
+            )}
           </div>
         </nav>
       </header>

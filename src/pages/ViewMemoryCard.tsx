@@ -2,35 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { getMemoryCardById } from "@/utils/storage";
 import { toast } from "sonner";
 import { SpotifyPlayer } from "@/components/SpotifyPlayer";
 import { MemoryCardContent } from "@/components/MemoryCardContent";
-import { parseDate, formatDate } from "@/utils/dateUtils";
-
-// Dados simulados - Em um aplicativo real, isso viria de uma API
-const mockCards = {
-  "memory-1": {
-    eventName: "Aniversário de Casamento",
-    personName: "Maria e João",
-    celebrationDate: new Date(2025, 5, 15), // 15 de junho de 2025
-    spotifyLink: "https://open.spotify.com/track/123456",
-    emoji: "❤️",
-    theme: "pink",
-    photos: ["https://images.unsplash.com/photo-1522673607200-164d1b3ce551?auto=format&fit=crop&w=300", 
-             "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=300"],
-  },
-  "memory-2": {
-    eventName: "Dia das Mães",
-    personName: "Ana Silva",
-    celebrationDate: new Date(2025, 4, 14), // 14 de maio de 2025
-    spotifyLink: "https://open.spotify.com/track/654321",
-    emoji: "💐",
-    theme: "purple",
-    photos: ["https://images.unsplash.com/photo-1591156021782-f3a5cb270695?auto=format&fit=crop&w=300",
-             "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=300"],
-  },
-};
+import { parseDate } from "@/utils/dateUtils";
+import { supabaseService } from "@/services/supabaseService";
+import { MemoryCard } from "@/utils/storage";
 
 const ViewMemoryCard = () => {
   const { id } = useParams();
@@ -42,52 +19,50 @@ const ViewMemoryCard = () => {
       console.log("Tentando carregar cartão:", id);
       setIsLoading(true);
       
-      try {
-        // Tenta obter o cartão do armazenamento
-        const storedCard = getMemoryCardById(id);
-        
-        console.log("Resultado da busca:", storedCard ? "Encontrado" : "Não encontrado");
-        
-        if (storedCard) {
-          try {
-            // Converte datas de string para objetos Date para formatação da UI se necessário
-            const dateObj = parseDate(storedCard.celebrationDate);
-            
-            const convertedCard = {
-              ...storedCard,
-              // Só converte se conseguiu fazer o parsing, senão mantém a string original
-              celebrationDate: dateObj || storedCard.celebrationDate
-            };
-            
-            setCardData(convertedCard);
-            console.log("Cartão carregado do armazenamento:", id);
-            
-            // Confirma que o cartão foi carregado com sucesso
-            toast.success("Cartão carregado com sucesso");
-          } catch (error) {
-            console.error("Erro ao processar cartão:", error);
-            // Mesmo com erro de processamento, usa o cartão original
-            setCardData(storedCard);
-            toast.error("Erro ao processar dados do cartão");
+      async function fetchCard() {
+        try {
+          // Tenta obter o cartão do Supabase
+          const storedCard = await supabaseService.getMemoryCardById(id);
+          
+          console.log("Resultado da busca:", storedCard ? "Encontrado" : "Não encontrado");
+          
+          if (storedCard) {
+            try {
+              // Converte datas de string para objetos Date para formatação da UI se necessário
+              const dateObj = parseDate(storedCard.celebrationDate);
+              
+              const convertedCard = {
+                ...storedCard,
+                // Só converte se conseguiu fazer o parsing, senão mantém a string original
+                celebrationDate: dateObj || storedCard.celebrationDate
+              };
+              
+              setCardData(convertedCard);
+              console.log("Cartão carregado do Supabase:", id);
+              
+              // Confirma que o cartão foi carregado com sucesso
+              toast.success("Cartão carregado com sucesso");
+            } catch (error) {
+              console.error("Erro ao processar cartão:", error);
+              // Mesmo com erro de processamento, usa o cartão original
+              setCardData(storedCard);
+              toast.error("Erro ao processar dados do cartão");
+            }
+          } else {
+            console.log("Cartão não encontrado:", id);
+            toast.error("Cartão não encontrado");
+            setCardData(null);
           }
-        } 
-        // Volta para dados simulados se não encontrado no armazenamento
-        else if (id in mockCards) {
-          setCardData(mockCards[id as keyof typeof mockCards]);
-          console.log("Usando dados simulados para:", id);
-          toast("Usando dados de exemplo (cartão não encontrado no armazenamento)");
-        } else {
-          console.log("Cartão não encontrado:", id);
-          toast.error("Cartão não encontrado");
+        } catch (error) {
+          console.error("Erro ao buscar cartão:", error);
+          toast.error("Erro ao buscar cartão");
           setCardData(null);
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Erro ao buscar cartão:", error);
-        toast.error("Erro ao buscar cartão");
-        setCardData(null);
-      } finally {
-        setIsLoading(false);
       }
+      
+      fetchCard();
     }
   }, [id]);
 

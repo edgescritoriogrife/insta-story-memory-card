@@ -24,6 +24,8 @@ import { toast } from "sonner";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useNavigate } from "react-router-dom";
 import { saveMemoryCard } from "@/utils/storage";
+import { useAuth } from "@/providers/AuthProvider";
+import { supabaseService } from "@/services/supabaseService";
 
 type MemoryCardData = {
   eventName: string;
@@ -48,7 +50,8 @@ const themes = [
 
 export const MemoryCardCreator = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState<"form" | "preview" | "payment" | "processing">("form");
+  const { user } = useAuth();
+  const [step, setStep] = useState<"form" | "preview" | "processing">("form");
   const [formData, setFormData] = useState<MemoryCardData>({
     eventName: "",
     personName: "",
@@ -56,7 +59,7 @@ export const MemoryCardCreator = () => {
     spotifyLink: "",
     emoji: "❤️",
     theme: "pink",
-    message: "", // Inicialização do campo de mensagem
+    message: "",
     photos: null,
   });
 
@@ -75,7 +78,7 @@ export const MemoryCardCreator = () => {
     setFormData((prev) => ({ ...prev, celebrationDate: date }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       // Create an array to store all processed photos
       const newPhotos: string[] = [];
@@ -176,56 +179,67 @@ export const MemoryCardCreator = () => {
     setStep("preview");
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    // Verificar se o usuário está autenticado
+    if (!user) {
+      toast.error("Você precisa estar logado para salvar um cartão");
+      navigate("/auth");
+      return;
+    }
+    
     // Show processing state
     setStep("processing");
     
-    // This would be connected to a payment processor in a real app
-    const toastId = toast.loading("Processando pagamento...");
+    // Processar as fotos através do Supabase Storage
+    let processedPhotos: string[] | null = null;
     
-    // Simulate payment processing
-    setTimeout(() => {
-      // Dismiss the loading toast
-      toast.dismiss(toastId);
+    if (formData.photos && formData.photos.length > 0) {
+      const uploadPromises = formData.photos.map(async (photo, index) => {
+        const fileName = `photo_${index}.jpg`;
+        return await supabaseService.uploadImage(photo, fileName);
+      });
       
-      // Generate a unique ID for the memory card
-      const cardId = `memory-${Date.now()}`;
+      const uploadedUrls = await Promise.all(uploadPromises);
+      processedPhotos = uploadedUrls.filter((url): url is string => url !== null);
+    }
+    
+    // Generate a unique ID for the memory card
+    const cardId = `memory-${Date.now()}`;
+    
+    // Calculate creation and expiration dates
+    const now = new Date();
+    const createdAt = format(now, "dd/MM/yyyy");
+    
+    // Set expiration date to 1 year from now
+    const expiresAt = format(new Date(now.setFullYear(now.getFullYear() + 1)), "dd/MM/yyyy");
+    
+    // Create the memory card object
+    const memoryCard = {
+      id: cardId,
+      eventName: formData.eventName,
+      personName: formData.personName,
+      celebrationDate: formData.celebrationDate ? format(formData.celebrationDate, "dd/MM/yyyy") : "",
+      spotifyLink: formData.spotifyLink,
+      emoji: formData.emoji,
+      theme: formData.theme,
+      message: formData.message,
+      photos: processedPhotos,
+      createdAt,
+      expiresAt
+    };
+    
+    // Save the memory card to Supabase
+    const saveSuccess = await supabaseService.saveMemoryCard(memoryCard);
+    
+    if (saveSuccess) {
+      toast.success("Seu cartão foi salvo com sucesso!");
       
-      // Calculate creation and expiration dates
-      const now = new Date();
-      const createdAt = format(now, "dd/MM/yyyy");
-      
-      // Set expiration date to 1 year from now
-      const expiresAt = format(new Date(now.setFullYear(now.getFullYear() + 1)), "dd/MM/yyyy");
-      
-      // Create the memory card object
-      const memoryCard = {
-        id: cardId,
-        eventName: formData.eventName,
-        personName: formData.personName,
-        celebrationDate: formData.celebrationDate ? format(formData.celebrationDate, "dd/MM/yyyy") : "",
-        spotifyLink: formData.spotifyLink,
-        emoji: formData.emoji,
-        theme: formData.theme,
-        message: formData.message, // Adicionando a mensagem ao cartão
-        photos: formData.photos,
-        createdAt,
-        expiresAt
-      };
-      
-      // Save the memory card to storage
-      const saveSuccess = saveMemoryCard(memoryCard);
-      
-      if (saveSuccess) {
-        toast.success("Pagamento confirmado! Seu cartão foi salvo.");
-        
-        // Navigate to dashboard after successful payment
-        setTimeout(() => navigate(`/memory/${cardId}`), 1000);
-      } else {
-        toast.error("Erro ao salvar o cartão. O armazenamento pode estar cheio.");
-        setStep("preview"); // Return to preview step so they can try again
-      }
-    }, 2000);
+      // Navigate to the card view after successful save
+      setTimeout(() => navigate(`/memory/${cardId}`), 1000);
+    } else {
+      toast.error("Erro ao salvar o cartão. Tente novamente mais tarde.");
+      setStep("preview"); // Return to preview step so they can try again
+    }
   };
 
   // Processing view

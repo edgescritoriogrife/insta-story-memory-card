@@ -4,28 +4,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { getMemoryCards, MemoryCard, clearAllMemoryCards, deleteMemoryCard } from "@/utils/storage";
+import { MemoryCard } from "@/utils/storage";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { Trash2, LogOut } from "lucide-react";
+import { supabaseService } from "@/services/supabaseService";
+import { useAuth } from "@/providers/AuthProvider";
 
 export const UserDashboard = () => {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [memoryCards, setMemoryCards] = useState<MemoryCard[]>([]);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // Load memory cards from storage when component mounts
+    // Verificar se o usuário está autenticado
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    
+    // Carregar cartões
     loadCards();
-  }, []);
+  }, [user, navigate]);
   
-  // Function to refresh cards from storage
-  const loadCards = () => {
+  // Função para atualizar cartões do Supabase
+  const loadCards = async () => {
     setLoading(true);
     try {
-      const cards = getMemoryCards();
+      const cards = await supabaseService.getMemoryCards();
       setMemoryCards(cards);
     } catch (error) {
-      console.error("Error loading memory cards:", error);
+      console.error("Erro ao carregar cartões:", error);
       toast.error("Erro ao carregar cartões");
     } finally {
       setLoading(false);
@@ -33,7 +42,7 @@ export const UserDashboard = () => {
   };
   
   const copyLinkToClipboard = (id: string) => {
-    // Get the current base URL from the window location
+    // Obter a URL base atual
     const baseUrl = window.location.origin;
     const fullLink = `${baseUrl}/memory/${id}`;
     
@@ -45,21 +54,20 @@ export const UserDashboard = () => {
     navigate(`/memory/${id}`);
   };
   
-  const handleClearAllCards = () => {
-    const success = clearAllMemoryCards();
-    if (success) {
-      toast.success("Todos os cartões foram removidos com sucesso");
-      setMemoryCards([]);
-    } else {
-      toast.error("Erro ao limpar cartões");
-    }
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
   };
   
-  const handleDeleteCard = (id: string) => {
+  const handleDeleteCard = async (id: string) => {
     try {
-      deleteMemoryCard(id);
-      setMemoryCards((prev) => prev.filter(card => card.id !== id));
-      toast.success("Cartão removido com sucesso");
+      const success = await supabaseService.deleteMemoryCard(id);
+      if (success) {
+        setMemoryCards((prev) => prev.filter(card => card.id !== id));
+        toast.success("Cartão removido com sucesso");
+      } else {
+        toast.error("Erro ao remover cartão");
+      }
     } catch (error) {
       console.error("Erro ao remover cartão:", error);
       toast.error("Erro ao remover cartão");
@@ -73,30 +81,18 @@ export const UserDashboard = () => {
           Meus Cartões de Memória
         </h1>
         
-        {memoryCards.length > 0 && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm" className="self-center md:self-auto">
-                <Trash2 className="h-4 w-4 mr-2" /> Limpar todos os cartões
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta ação não pode ser desfeita. Isso removerá permanentemente todos os seus cartões 
-                  de memória do armazenamento local deste dispositivo.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleClearAllCards}>
-                  Sim, remover todos
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
+        <div className="flex flex-col sm:flex-row gap-2">
+          {user && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleSignOut}
+              className="self-center md:self-auto flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" /> Sair
+            </Button>
+          )}
+        </div>
       </div>
 
       {loading && (
