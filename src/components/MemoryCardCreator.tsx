@@ -191,15 +191,16 @@ const MemoryCardCreator = () => {
                 {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Escolha uma data</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
               <Calendar
                 mode="single"
                 selected={date}
                 onSelect={setDate}
                 disabled={(date) =>
-                  date > new Date()
+                  date < new Date(new Date().setDate(new Date().getDate() - 1))
                 }
                 initialFocus
+                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
@@ -219,15 +220,16 @@ const MemoryCardCreator = () => {
                 {expiresAt ? format(expiresAt, "dd/MM/yyyy", { locale: ptBR }) : <span>Escolha uma data</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
               <Calendar
                 mode="single"
                 selected={expiresAt}
                 onSelect={setExpiresAt}
                 disabled={(date) =>
-                  date < new Date()
+                  date < new Date(new Date().setDate(new Date().getDate() - 1))
                 }
                 initialFocus
+                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
