@@ -75,6 +75,7 @@ export const PaymentsHistory = () => {
     switch (status) {
       case 'succeeded':
       case 'success':
+      case 'paid':
         return <span className="text-green-600 font-medium">Aprovado</span>;
       case 'pending':
         return <span className="text-amber-600 font-medium">Pendente</span>;
@@ -130,7 +131,7 @@ export const PaymentsHistory = () => {
           <TableBody>
             {payments.map((payment) => (
               <TableRow key={payment.id}>
-                <TableCell>{formatDate(new Date(payment.created_at))}</TableCell>
+                <TableCell>{formatDate(payment.created_at)}</TableCell>
                 <TableCell>
                   {payment.memory_card ? (
                     <span>

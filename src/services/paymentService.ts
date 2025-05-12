@@ -19,13 +19,19 @@ export const paymentService = {
         throw error;
       }
 
+      if (!data || !data.url) {
+        console.error("Resposta inválida da função create-payment:", data);
+        toast.error("Erro ao processar pagamento: resposta inválida do servidor");
+        throw new Error("Resposta inválida do servidor");
+      }
+
       console.log("Sessão de checkout criada com sucesso:", data);
       return data;
     } catch (error) {
       console.error("Erro ao criar sessão de checkout:", error);
       const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
       toast.error(`Falha ao iniciar pagamento: ${errorMessage}`);
-      throw error;
+      return null;
     }
   },
 
@@ -44,13 +50,19 @@ export const paymentService = {
         throw error;
       }
 
+      if (!data) {
+        console.error("Resposta inválida da função verify-payment");
+        toast.error("Erro ao verificar pagamento: resposta inválida do servidor");
+        throw new Error("Resposta inválida do servidor");
+      }
+
       console.log("Status do pagamento verificado:", data);
       return data;
     } catch (error) {
       console.error("Erro ao verificar status do pagamento:", error);
       const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
       toast.error(`Falha ao verificar pagamento: ${errorMessage}`);
-      throw error;
+      return null;
     }
   }
 };
