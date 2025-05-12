@@ -8,3 +8,13 @@ export const formatDate = (dateString: string): string => {
     year: 'numeric'
   });
 };
+
+// Função para analisar uma string de data e retornar um objeto Date
+export const parseDate = (dateString: string): Date | null => {
+  try {
+    return new Date(dateString);
+  } catch (error) {
+    console.error('Erro ao analisar data:', error);
+    return null;
+  }
+};
