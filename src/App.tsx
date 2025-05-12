@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import ViewMemoryCard from "./pages/ViewMemoryCard";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
 import { AuthProvider } from "./providers/AuthProvider";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/memory/:id" element={<ViewMemoryCard />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />

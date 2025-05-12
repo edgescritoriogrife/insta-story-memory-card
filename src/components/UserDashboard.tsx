@@ -11,7 +11,11 @@ import { supabaseService } from "@/services/supabaseService";
 import { paymentService } from "@/services/paymentService"; 
 import { useAuth } from "@/providers/AuthProvider";
 
-export const UserDashboard = () => {
+interface UserDashboardProps {
+  hideHeader?: boolean;
+}
+
+export const UserDashboard: React.FC<UserDashboardProps> = ({ hideHeader = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
@@ -139,25 +143,27 @@ export const UserDashboard = () => {
   };
 
   return (
-    <div className="container max-w-4xl mx-auto my-8">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
-        <h1 className="text-3xl font-bold text-center md:text-left fancy-text text-purple-700 mb-4 md:mb-0">
-          Meus Cartões de Memória
-        </h1>
-        
-        <div className="flex flex-col sm:flex-row gap-2">
-          {user && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleSignOut}
-              className="self-center md:self-auto flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" /> Sair
-            </Button>
-          )}
+    <div className="container max-w-4xl mx-auto">
+      {!hideHeader && (
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
+          <h1 className="text-3xl font-bold text-center md:text-left fancy-text text-purple-700 mb-4 md:mb-0">
+            Meus Cartões de Memória
+          </h1>
+          
+          <div className="flex flex-col sm:flex-row gap-2">
+            {user && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleSignOut}
+                className="self-center md:self-auto flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" /> Sair
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {loading && (
         <div className="flex justify-center py-12">

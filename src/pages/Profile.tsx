@@ -1,11 +1,12 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { UserDashboard } from "@/components/UserDashboard";
 import { Button } from "@/components/ui/button";
-import { Home, User } from "lucide-react";
+import { UserProfile } from "@/components/UserProfile";
+import { PaymentsHistory } from "@/components/PaymentsHistory";
+import { UserDashboard } from "@/components/UserDashboard";
 
-const Dashboard = () => {
+const Profile = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-pink-50">
       <header className="container mx-auto px-4 py-6">
@@ -13,23 +14,21 @@ const Dashboard = () => {
           <div className="text-2xl font-bold fancy-text text-purple-700">
             <Link to="/">MemóriasCard</Link>
           </div>
-          <div className="flex gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/profile" className="flex items-center gap-1">
-                <User className="h-4 w-4" /> Meu Perfil
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link to="/" className="flex items-center gap-1">
-                <Home className="h-4 w-4" /> Criar Novo Cartão
-              </Link>
-            </Button>
-          </div>
+          <Button asChild>
+            <Link to="/">Criar Novo Cartão</Link>
+          </Button>
         </nav>
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <UserDashboard />
+        <div className="grid gap-8">
+          <UserProfile />
+          <PaymentsHistory />
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Seus Cartões</h2>
+            <UserDashboard hideHeader={true} />
+          </div>
+        </div>
       </main>
 
       <footer className="container mx-auto px-4 py-8 mt-16 border-t text-center text-sm text-gray-600">
@@ -40,4 +39,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Profile;

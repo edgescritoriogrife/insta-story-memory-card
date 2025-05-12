@@ -3,7 +3,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MemoryCardCreator from "@/components/MemoryCardCreator";
 import { Button } from "@/components/ui/button";
-import { LogIn, LogOut } from "lucide-react";
+import { LogIn, LogOut, User } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { LandingPage } from "@/components/LandingPage";
 
@@ -21,14 +21,19 @@ const Index = () => {
       <header className="container mx-auto px-4 py-6">
         <nav className="flex justify-between items-center">
           <div className="text-2xl font-bold fancy-text text-purple-700">MemóriasCard</div>
-          <div className="flex gap-4">
+          <div className="flex gap-2">
             {user ? (
               <>
-                <Button variant="outline" asChild>
+                <Button variant="outline" asChild size="sm">
                   <Link to="/dashboard">Meus Cartões</Link>
                 </Button>
-                <Button variant="ghost" onClick={handleSignOut}>
-                  <LogOut className="h-4 w-4 mr-2" /> Sair
+                <Button variant="outline" asChild size="sm">
+                  <Link to="/profile" className="flex items-center gap-1">
+                    <User className="h-4 w-4" /> Meu Perfil
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-1" /> Sair
                 </Button>
               </>
             ) : (
