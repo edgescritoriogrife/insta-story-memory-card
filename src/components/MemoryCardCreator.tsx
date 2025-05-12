@@ -1,6 +1,6 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { v4 as uuidv4 } from 'uuid';
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { supabaseService } from "@/services/supabaseService";
 import { MemoryCard } from "@/utils/storage";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MemoryCardCreatorProps {
   // onCardSave: (cardData: MemoryCard) => void;
@@ -29,6 +30,30 @@ const MemoryCardCreator = () => {
   const [photos, setPhotos] = useState<string[]>([]);
   const [expiresAt, setExpiresAt] = useState<Date | undefined>(new Date(new Date().setDate(new Date().getDate() + 30)));
   const [loading, setLoading] = useState(false);
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState<boolean | null>(null);
+  
+  const navigate = useNavigate();
+  
+  // Verificar autenticação ao carregar o componente
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        const isAuth = !!user && !error;
+        setIsUserAuthenticated(isAuth);
+        
+        if (!isAuth) {
+          toast.error("Você precisa estar logado para criar um cartão.");
+          navigate('/auth');
+        }
+      } catch (error) {
+        console.error("Erro ao verificar autenticação:", error);
+        setIsUserAuthenticated(false);
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
 
   const handleSave = async (cardToSave: MemoryCard) => {
     try {
@@ -36,6 +61,12 @@ const MemoryCardCreator = () => {
 
       if (!eventName || !personName || !date) {
         toast.error("Por favor, preencha todos os campos obrigatórios.");
+        return;
+      }
+      
+      if (!isUserAuthenticated) {
+        toast.error("Você precisa estar logado para salvar um cartão.");
+        navigate('/auth');
         return;
       }
 
@@ -62,12 +93,16 @@ const MemoryCardCreator = () => {
 
       if (savedCard) {
         toast.success("Cartão de memória criado com sucesso!");
-      } else {
-        toast.error("Erro ao salvar o cartão de memória.");
       }
     } catch (error) {
       console.error("Erro ao salvar o cartão:", error);
-      toast.error("Erro ao salvar o cartão");
+      
+      // Se o erro for de autenticação, redirecionar para login
+      if (error instanceof Error && error.message === "Usuário não autenticado") {
+        navigate('/auth');
+      } else {
+        toast.error("Erro ao salvar o cartão. Verifique se você está logado.");
+      }
     } finally {
       setLoading(false);
       // Limpar os campos após salvar
@@ -147,6 +182,34 @@ const MemoryCardCreator = () => {
 
     handleSave(cardData);
   };
+
+  // Se o status de autenticação ainda estiver sendo verificado, mostre um indicador de carregamento
+  if (isUserAuthenticated === null) {
+    return (
+      <div className="bg-white shadow-md rounded-lg p-8 flex justify-center items-center">
+        <p>Verificando autenticação...</p>
+      </div>
+    );
+  }
+
+  // Se o usuário não estiver autenticado, mostre uma mensagem e um botão para redirecionar para login
+  if (isUserAuthenticated === false) {
+    return (
+      <div className="bg-white shadow-md rounded-lg p-8">
+        <h2 className="text-2xl font-bold mb-6 text-center fancy-text text-purple-600">
+          Autenticação Necessária
+        </h2>
+        <p className="text-center mb-4">
+          Você precisa estar logado para criar um cartão de memória.
+        </p>
+        <div className="flex justify-center">
+          <Button onClick={() => navigate('/auth')} className="w-full md:w-auto">
+            Fazer Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white shadow-md rounded-lg p-8">
