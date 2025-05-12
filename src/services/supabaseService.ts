@@ -1,195 +1,158 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { MemoryCard } from "@/utils/storage";
+import { MemoryCard, SupabaseMemoryCard } from "@/utils/storage";
+import { formatRelativeDate } from "@/utils/dateUtils";
 
-// Interface para representar o formato de cartão de memória no Supabase
-export interface SupabaseMemoryCard {
-  id: string;
-  user_id?: string;
-  event_name: string;
-  person_name: string;
-  celebration_date: string;
-  created_at?: string;
-  expires_at: string;
-  spotify_link?: string | null;
-  emoji: string;
-  theme: string;
-  message?: string | null;
-  photos: string[] | null;
-}
-
-// Converter do formato Supabase para formato local
-export const convertSupabaseToLocalCard = (card: SupabaseMemoryCard): MemoryCard => {
+// Função para converter o formato do banco de dados para o formato da aplicação
+const mapSupabaseToMemoryCard = (card: SupabaseMemoryCard): MemoryCard => {
   return {
     id: card.id,
+    userId: card.user_id || undefined,
     eventName: card.event_name,
     personName: card.person_name,
     celebrationDate: card.celebration_date,
-    createdAt: card.created_at ? new Date(card.created_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+    createdAt: card.created_at,
     expiresAt: card.expires_at,
     spotifyLink: card.spotify_link || undefined,
     emoji: card.emoji,
     theme: card.theme,
-    photos: card.photos || null,
     message: card.message || undefined,
+    photos: card.photos || undefined,
   };
 };
 
-// Converter do formato local para formato Supabase
-export const convertLocalToSupabaseCard = (card: MemoryCard): SupabaseMemoryCard => {
+// Função para converter o formato da aplicação para o formato do banco de dados
+const mapMemoryCardToSupabase = (card: MemoryCard): SupabaseMemoryCard => {
   return {
     id: card.id,
+    user_id: card.userId,
     event_name: card.eventName,
     person_name: card.personName,
     celebration_date: card.celebrationDate,
+    created_at: card.createdAt,
     expires_at: card.expiresAt,
-    spotify_link: card.spotifyLink || null,
+    spotify_link: card.spotifyLink,
     emoji: card.emoji,
     theme: card.theme,
+    message: card.message,
     photos: card.photos,
-    message: card.message || null,
   };
 };
 
-// Funções para interagir com o Supabase
+// Serviço para interação com o Supabase
 export const supabaseService = {
-  // Salvar um cartão de memória
-  async saveMemoryCard(card: MemoryCard): Promise<boolean> {
+  // Recuperar todos os cartões de memória do usuário atual
+  getMemoryCards: async (): Promise<MemoryCard[]> => {
     try {
-      console.log("Salvando cartão no Supabase:", card);
-      const supabaseCard = convertLocalToSupabaseCard(card);
-      
-      const { data, error } = await supabase
-        .from("memory_cards")
-        .upsert(supabaseCard)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Erro ao salvar cartão no Supabase:", error);
-        return false;
-      }
-      
-      console.log("Cartão salvo com sucesso no Supabase:", data);
-      return true;
-    } catch (error) {
-      console.error("Exceção ao salvar cartão no Supabase:", error);
-      return false;
-    }
-  },
-
-  // Obter todos os cartões de memória do usuário atual
-  async getMemoryCards(): Promise<MemoryCard[]> {
-    try {
-      // Verificar se o usuário está autenticado
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        console.log("Usuário não autenticado, usando armazenamento local.");
-        return []; // Retorna array vazio se não estiver autenticado
-      }
-      
-      const { data, error } = await supabase
+      const { data: cards, error } = await supabase
         .from("memory_cards")
         .select("*")
         .order("created_at", { ascending: false });
-      
+
       if (error) {
-        console.error("Erro ao buscar cartões do Supabase:", error);
-        return [];
+        console.error("Erro ao buscar cartões:", error);
+        throw error;
       }
-      
-      console.log("Cartões recuperados do Supabase:", data);
-      return data.map(convertSupabaseToLocalCard);
+
+      return (cards as SupabaseMemoryCard[]).map(mapSupabaseToMemoryCard);
     } catch (error) {
-      console.error("Exceção ao buscar cartões do Supabase:", error);
-      return [];
+      console.error("Erro ao buscar cartões:", error);
+      throw error;
     }
   },
 
-  // Obter um cartão específico por ID
-  async getMemoryCardById(id: string): Promise<MemoryCard | undefined> {
+  // Obter um cartão de memória específico
+  getMemoryCard: async (id: string): Promise<MemoryCard | null> => {
     try {
-      if (!id) {
-        console.error("ID de cartão inválido:", id);
-        return undefined;
-      }
-      
       const { data, error } = await supabase
         .from("memory_cards")
         .select("*")
         .eq("id", id)
         .single();
-      
+
       if (error) {
-        console.error("Erro ao buscar cartão do Supabase:", error);
-        return undefined;
+        console.error("Erro ao buscar cartão:", error);
+        return null;
       }
-      
-      console.log("Cartão recuperado do Supabase:", data);
-      return convertSupabaseToLocalCard(data);
+
+      return mapSupabaseToMemoryCard(data as SupabaseMemoryCard);
     } catch (error) {
-      console.error("Exceção ao buscar cartão do Supabase:", error);
-      return undefined;
+      console.error("Erro ao buscar cartão:", error);
+      return null;
+    }
+  },
+
+  // Salvar um novo cartão de memória
+  saveMemoryCard: async (card: MemoryCard): Promise<MemoryCard | null> => {
+    try {
+      const user = supabase.auth.getUser();
+      const supabaseCard = mapMemoryCardToSupabase(card);
+      
+      // Adiciona o ID do usuário atual
+      supabaseCard.user_id = (await user).data.user?.id;
+
+      const { data, error } = await supabase
+        .from("memory_cards")
+        .insert([supabaseCard])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Erro ao salvar cartão:", error);
+        throw error;
+      }
+
+      return mapSupabaseToMemoryCard(data as SupabaseMemoryCard);
+    } catch (error) {
+      console.error("Erro ao salvar cartão:", error);
+      throw error;
     }
   },
 
   // Excluir um cartão de memória
-  async deleteMemoryCard(id: string): Promise<boolean> {
+  deleteMemoryCard: async (id: string): Promise<boolean> => {
     try {
       const { error } = await supabase
         .from("memory_cards")
         .delete()
         .eq("id", id);
-      
+
       if (error) {
-        console.error("Erro ao excluir cartão do Supabase:", error);
+        console.error("Erro ao excluir cartão:", error);
         return false;
       }
-      
-      console.log("Cartão excluído com sucesso do Supabase:", id);
+
       return true;
     } catch (error) {
-      console.error("Exceção ao excluir cartão do Supabase:", error);
+      console.error("Erro ao excluir cartão:", error);
       return false;
     }
   },
 
-  // Upload de uma imagem para o storage do Supabase
-  async uploadImage(file: string, fileName: string): Promise<string | null> {
+  // Upload de uma foto para o storage
+  uploadPhoto: async (file: File, folderName: string): Promise<string | null> => {
     try {
-      // Converte base64 para blob
-      const base64Data = file.split(",")[1];
-      const byteCharacters = atob(base64Data);
-      const byteArrays = [];
-      
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteArrays.push(byteCharacters.charCodeAt(i));
-      }
-      
-      const byteArray = new Uint8Array(byteArrays);
-      const blob = new Blob([byteArray], { type: 'image/jpeg' });
-      
-      // Gerar nome de arquivo único
-      const uniqueFileName = `${Date.now()}_${fileName}`;
-      
-      const { data, error } = await supabase.storage
-        .from("memory_card_photos")
-        .upload(uniqueFileName, blob);
-      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `${folderName}/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from('memory_card_photos')
+        .upload(filePath, file);
+
       if (error) {
-        console.error("Erro ao fazer upload da imagem:", error);
+        console.error("Erro ao fazer upload da foto:", error);
         return null;
       }
-      
-      // Obter URL pública da imagem
-      const { data: urlData } = supabase.storage
-        .from("memory_card_photos")
-        .getPublicUrl(data.path);
-      
-      console.log("Imagem enviada com sucesso:", urlData.publicUrl);
-      return urlData.publicUrl;
+
+      // Obtém a URL da foto
+      const { data } = supabase.storage
+        .from('memory_card_photos')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
     } catch (error) {
-      console.error("Exceção ao fazer upload da imagem:", error);
+      console.error("Erro ao fazer upload da foto:", error);
       return null;
     }
   }

@@ -1,8 +1,7 @@
-
-// Simple utility to manage memory cards in local storage
-
-export type MemoryCard = {
+// Tipos para os cartões de memória
+export interface MemoryCard {
   id: string;
+  userId?: string;
   eventName: string;
   personName: string;
   celebrationDate: string;
@@ -11,10 +10,24 @@ export type MemoryCard = {
   spotifyLink?: string;
   emoji: string;
   theme: string;
-  photos: string[] | null;
-};
+  message?: string;
+  photos?: string[];
+}
 
-const STORAGE_KEY = 'memory-cards';
+export interface SupabaseMemoryCard {
+  id: string;
+  user_id?: string;
+  event_name: string;
+  person_name: string;
+  celebration_date: string;
+  created_at: string;
+  expires_at: string;
+  spotify_link?: string;
+  emoji: string;
+  theme: string;
+  message?: string;
+  photos?: string[];
+}
 
 // Função para comprimir imagem usando canvas
 const compressImage = (base64: string, maxWidth: number = 800, quality: number = 0.7): Promise<string> => {
