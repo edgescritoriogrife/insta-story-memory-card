@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MemoryCardCreator } from "@/components/MemoryCardCreator";
+import MemoryCardCreator from "@/components/MemoryCardCreator";
 import { Button } from "@/components/ui/button";
 import { LogIn, LogOut } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
