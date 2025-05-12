@@ -27,6 +27,15 @@ const ViewMemoryCard = () => {
           console.log("Resultado da busca:", storedCard ? "Encontrado" : "Não encontrado");
           
           if (storedCard) {
+            // Verificar se o cartão foi pago
+            if (!storedCard.is_paid) {
+              console.log("Cartão não pago:", id);
+              toast.error("Este cartão ainda não foi pago e não pode ser visualizado");
+              setCardData(null);
+              setIsLoading(false);
+              return;
+            }
+            
             try {
               // Converte datas de string para objetos Date para formatação da UI se necessário
               const dateObj = parseDate(storedCard.celebrationDate);
@@ -81,7 +90,7 @@ const ViewMemoryCard = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-50 to-pink-50">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Cartão não encontrado</h1>
-          <p className="mb-4 text-gray-600">O cartão que você está procurando não existe ou foi removido.</p>
+          <p className="mb-4 text-gray-600">O cartão que você está procurando não existe, não foi pago ou foi removido.</p>
           <Button asChild>
             <Link to="/">Voltar para Home</Link>
           </Button>

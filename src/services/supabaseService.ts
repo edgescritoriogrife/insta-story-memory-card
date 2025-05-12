@@ -17,6 +17,7 @@ const mapSupabaseToMemoryCard = (card: SupabaseMemoryCard): MemoryCard => {
     theme: card.theme,
     message: card.message || undefined,
     photos: card.photos || undefined,
+    is_paid: card.is_paid || false,
   };
 };
 
@@ -35,6 +36,7 @@ const mapMemoryCardToSupabase = (card: MemoryCard): SupabaseMemoryCard => {
     theme: card.theme,
     message: card.message,
     photos: card.photos,
+    is_paid: card.is_paid || false,
   };
 };
 

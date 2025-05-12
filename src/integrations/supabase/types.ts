@@ -17,6 +17,7 @@ export type Database = {
           event_name: string
           expires_at: string
           id: string
+          is_paid: boolean | null
           message: string | null
           person_name: string
           photos: Json | null
@@ -31,6 +32,7 @@ export type Database = {
           event_name: string
           expires_at: string
           id?: string
+          is_paid?: boolean | null
           message?: string | null
           person_name: string
           photos?: Json | null
@@ -45,6 +47,7 @@ export type Database = {
           event_name?: string
           expires_at?: string
           id?: string
+          is_paid?: boolean | null
           message?: string | null
           person_name?: string
           photos?: Json | null
@@ -53,6 +56,50 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          memory_card_id: string | null
+          status: string
+          stripe_session_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          memory_card_id?: string | null
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          memory_card_id?: string | null
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_memory_card_id_fkey"
+            columns: ["memory_card_id"]
+            isOneToOne: false
+            referencedRelation: "memory_cards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

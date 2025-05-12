@@ -2,19 +2,28 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { MemoryCard } from "@/utils/storage";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash2, LogOut } from "lucide-react";
+import { Trash2, LogOut, CreditCard } from "lucide-react";
 import { supabaseService } from "@/services/supabaseService";
+import { paymentService } from "@/services/paymentService"; 
 import { useAuth } from "@/providers/AuthProvider";
 
 export const UserDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signOut } = useAuth();
   const [memoryCards, setMemoryCards] = useState<MemoryCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [processingPayment, setProcessingPayment] = useState<string | null>(null);
+  
+  // Extrair parâmetros da URL para verificar status de pagamento
+  const queryParams = new URLSearchParams(location.search);
+  const paymentStatus = queryParams.get('payment');
+  const cardId = queryParams.get('card_id');
+  const sessionId = queryParams.get('session_id');
   
   useEffect(() => {
     // Verificar se o usuário está autenticado
@@ -25,7 +34,43 @@ export const UserDashboard = () => {
     
     // Carregar cartões
     loadCards();
-  }, [user, navigate]);
+    
+    // Verificar status de pagamento, se houver
+    if (paymentStatus === 'success' && cardId && sessionId) {
+      verifyPayment(sessionId);
+    } else if (paymentStatus === 'success' && cardId) {
+      toast.success("Pagamento realizado com sucesso!");
+      // Limpar parâmetros da URL
+      navigate('/dashboard', { replace: true });
+      // Recarregar cartões para atualizar status
+      loadCards();
+    } else if (paymentStatus === 'canceled') {
+      toast.error("Pagamento cancelado");
+      // Limpar parâmetros da URL
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate, paymentStatus, cardId, sessionId]);
+  
+  // Função para verificar pagamento
+  const verifyPayment = async (sessionId: string) => {
+    try {
+      const result = await paymentService.verifyPaymentStatus(sessionId);
+      if (result && result.success) {
+        toast.success("Pagamento confirmado com sucesso!");
+        // Recarregar cartões para mostrar status atualizado
+        loadCards();
+      } else {
+        toast.error("Não foi possível confirmar o pagamento. Tente novamente mais tarde.");
+      }
+      // Limpar parâmetros da URL
+      navigate('/dashboard', { replace: true });
+    } catch (error) {
+      console.error("Erro ao verificar pagamento:", error);
+      toast.error("Erro ao verificar pagamento");
+      // Limpar parâmetros da URL
+      navigate('/dashboard', { replace: true });
+    }
+  };
   
   // Função para atualizar cartões do Supabase
   const loadCards = async () => {
@@ -71,6 +116,25 @@ export const UserDashboard = () => {
     } catch (error) {
       console.error("Erro ao remover cartão:", error);
       toast.error("Erro ao remover cartão");
+    }
+  };
+
+  const handlePayment = async (id: string) => {
+    try {
+      setProcessingPayment(id);
+      const result = await paymentService.createCheckoutSession(id);
+      
+      if (result && result.url) {
+        // Redirecionar para a página de checkout do Stripe
+        window.location.href = result.url;
+      } else {
+        toast.error("Erro ao processar pagamento. Tente novamente.");
+      }
+    } catch (error) {
+      console.error("Erro ao iniciar pagamento:", error);
+      toast.error("Erro ao iniciar pagamento");
+    } finally {
+      setProcessingPayment(null);
     }
   };
 
@@ -146,20 +210,48 @@ export const UserDashboard = () => {
                     <p className="font-medium">Expira em:</p>
                     <p>{card.expiresAt}</p>
                   </div>
-                  <div className="flex gap-2 items-center">
+                  <div>
+                    <p className="font-medium">Status:</p>
+                    <p className={card.is_paid ? "text-green-600 font-medium" : "text-orange-600 font-medium"}>
+                      {card.is_paid ? "Pago" : "Pendente de Pagamento"}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 items-center md:col-span-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => copyLinkToClipboard(card.id)}
+                      disabled={!card.is_paid}
+                      title={!card.is_paid ? "Faça o pagamento para compartilhar" : "Copiar link"}
                     >
                       Copiar Link
                     </Button>
                     <Button 
                       size="sm" 
                       onClick={() => viewCard(card.id)}
+                      disabled={!card.is_paid}
+                      title={!card.is_paid ? "Faça o pagamento para visualizar" : "Ver cartão"}
                     >
                       Ver Cartão
                     </Button>
+                    {!card.is_paid && (
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        onClick={() => handlePayment(card.id)}
+                        disabled={processingPayment === card.id}
+                        className="bg-green-600 hover:bg-green-700 flex items-center gap-1"
+                      >
+                        {processingPayment === card.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
+                        ) : (
+                          <>
+                            <CreditCard className="h-4 w-4" /> 
+                            Pagar R$17,90
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
