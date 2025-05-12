@@ -151,7 +151,12 @@ serve(async (req) => {
     // Criar uma sessão de checkout do Stripe
     logStep("Criando sessão de checkout");
     
-    // Criar a sessão de checkout primeiro
+    // Definir as URLs de redirecionamento
+    const origin = req.headers.get("origin") || "http://localhost:3000";
+    const successUrl = `${origin}/dashboard?payment=success&card_id=${cardId}`;
+    const cancelUrl = `${origin}/dashboard?payment=canceled&card_id=${cardId}`;
+    
+    // Criar a sessão de checkout
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: !customerId && user.email ? user.email : undefined,
@@ -172,8 +177,8 @@ serve(async (req) => {
         }
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/dashboard?payment=success&session_id=${session?.id}&card_id=${cardId}`,
-      cancel_url: `${req.headers.get("origin")}/dashboard?payment=canceled&card_id=${cardId}`
+      success_url: `${origin}/dashboard?payment=success&session_id=${session.id}&card_id=${cardId}`,
+      cancel_url: cancelUrl
     });
 
     logStep("Sessão de checkout criada", { sessionId: session.id, url: session.url });

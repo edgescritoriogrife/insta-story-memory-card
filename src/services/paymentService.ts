@@ -9,20 +9,24 @@ export const paymentService = {
     try {
       console.log("Iniciando criação de sessão de checkout para cardId:", cardId);
       
-      const { data, error, status } = await supabase.functions.invoke('create-payment', {
+      const response = await supabase.functions.invoke('create-payment', {
         body: { cardId }
       });
+      
+      const { data, error } = response;
+      // Obtemos o status code a partir da propriedade status no objeto response
+      const statusCode = response.status || 500;
 
       if (error) {
-        console.error("Erro ao criar sessão de checkout:", error, "Status:", status);
+        console.error("Erro ao criar sessão de checkout:", error, "Status:", statusCode);
         toast.error(`Erro ao processar pagamento: ${error.message || "Tente novamente mais tarde"}`);
         throw error;
       }
 
-      if (status !== 200) {
-        console.error("Status não esperado da função create-payment:", status);
-        toast.error(`Erro ao processar pagamento: resposta com status ${status}`);
-        throw new Error(`Resposta com status ${status}`);
+      if (statusCode !== 200) {
+        console.error("Status não esperado da função create-payment:", statusCode);
+        toast.error(`Erro ao processar pagamento: resposta com status ${statusCode}`);
+        throw new Error(`Resposta com status ${statusCode}`);
       }
 
       if (!data || !data.url || !data.sessionId) {
@@ -46,20 +50,24 @@ export const paymentService = {
     try {
       console.log("Verificando status do pagamento para sessionId:", sessionId);
       
-      const { data, error, status } = await supabase.functions.invoke('verify-payment', {
+      const response = await supabase.functions.invoke('verify-payment', {
         body: { sessionId }
       });
+      
+      const { data, error } = response;
+      // Obtemos o status code a partir da propriedade status no objeto response
+      const statusCode = response.status || 500;
 
       if (error) {
-        console.error("Erro ao verificar status do pagamento:", error, "Status:", status);
+        console.error("Erro ao verificar status do pagamento:", error, "Status:", statusCode);
         toast.error(`Erro ao verificar pagamento: ${error.message || "Tente novamente mais tarde"}`);
         throw error;
       }
 
-      if (status !== 200) {
-        console.error("Status não esperado da função verify-payment:", status);
-        toast.error(`Erro ao verificar pagamento: resposta com status ${status}`);
-        throw new Error(`Resposta com status ${status}`);
+      if (statusCode !== 200) {
+        console.error("Status não esperado da função verify-payment:", statusCode);
+        toast.error(`Erro ao verificar pagamento: resposta com status ${statusCode}`);
+        throw new Error(`Resposta com status ${statusCode}`);
       }
 
       if (!data) {
