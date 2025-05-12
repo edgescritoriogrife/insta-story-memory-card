@@ -16,6 +16,18 @@ export const formatDate = (dateString: string): string => {
 };
 
 /**
+ * Analisa uma string de data e retorna um objeto Date
+ */
+export const parseDate = (dateString: string): Date | null => {
+  try {
+    return parseISO(dateString);
+  } catch (error) {
+    console.error('Erro ao analisar data:', error);
+    return null;
+  }
+};
+
+/**
  * Formata uma data para exibição relativa (ex: "há 2 dias")
  */
 export const formatRelativeDate = (dateString: string): string => {

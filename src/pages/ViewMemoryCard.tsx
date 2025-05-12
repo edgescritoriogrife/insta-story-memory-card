@@ -22,7 +22,7 @@ const ViewMemoryCard = () => {
       async function fetchCard() {
         try {
           // Tenta obter o cartão do Supabase
-          const storedCard = await supabaseService.getMemoryCardById(id);
+          const storedCard = await supabaseService.getMemoryCard(id);
           
           console.log("Resultado da busca:", storedCard ? "Encontrado" : "Não encontrado");
           

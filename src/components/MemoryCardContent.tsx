@@ -7,7 +7,7 @@ type MemoryCardContentProps = {
   cardData: {
     eventName: string;
     personName: string;
-    celebrationDate: Date | undefined;
+    celebrationDate: string | Date;
     emoji: string;
     theme: string;
     message?: string; // Campo de mensagem opcional
@@ -39,6 +39,14 @@ export const MemoryCardContent = ({ cardData }: MemoryCardContentProps) => {
       cream: "bg-gradient-to-b from-amber-50 to-amber-100 text-amber-900",
     };
     return themes[theme as keyof typeof themes] || themes.pink;
+  };
+
+  // Função para formatar a data de celebração
+  const formatCelebrationDate = (date: string | Date) => {
+    if (date instanceof Date) {
+      return formatDate(date.toISOString());
+    }
+    return formatDate(date);
   };
 
   return (
@@ -94,7 +102,7 @@ export const MemoryCardContent = ({ cardData }: MemoryCardContentProps) => {
                 Data da Celebração
               </p>
               <p className="text-lg font-medium text-white">
-                {formatDate(cardData.celebrationDate)}
+                {formatCelebrationDate(cardData.celebrationDate)}
               </p>
             </div>
           )}
