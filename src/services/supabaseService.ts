@@ -47,10 +47,18 @@ export const supabaseService = {
   isUserAuthenticated: async (): Promise<boolean> => {
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        console.error("Usuário não autenticado:", error?.message || "Usuário não encontrado");
+      
+      if (error) {
+        console.error("Erro de autenticação:", error.message);
         return false;
       }
+      
+      if (!user) {
+        console.log("Usuário não autenticado: nenhum usuário encontrado");
+        return false;
+      }
+      
+      console.log("Usuário autenticado:", user.id);
       return true;
     } catch (error) {
       console.error("Erro ao verificar autenticação:", error);
@@ -62,15 +70,20 @@ export const supabaseService = {
   getMemoryCards: async (): Promise<MemoryCard[]> => {
     try {
       // Verificar autenticação
-      const isAuthenticated = await supabaseService.isUserAuthenticated();
-      if (!isAuthenticated) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error("Usuário não autenticado:", authError?.message || "Usuário não encontrado");
         toast.error("Você precisa estar logado para ver seus cartões.");
         return [];
       }
+      
+      console.log("Buscando cartões para o usuário:", user.id);
 
       const { data: cards, error } = await supabase
         .from("memory_cards")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -78,7 +91,8 @@ export const supabaseService = {
         toast.error(`Erro ao buscar cartões: ${error.message || "Tente novamente mais tarde"}`);
         throw error;
       }
-
+      
+      console.log(`${cards?.length || 0} cartões encontrados`);
       return (cards as SupabaseMemoryCard[]).map(mapSupabaseToMemoryCard);
     } catch (error) {
       console.error("Erro ao buscar cartões:", error);
@@ -90,6 +104,8 @@ export const supabaseService = {
   // Obter um cartão de memória específico
   getMemoryCard: async (id: string): Promise<MemoryCard | null> => {
     try {
+      console.log("Buscando cartão com ID:", id);
+      
       const { data, error } = await supabase
         .from("memory_cards")
         .select("*")
@@ -101,7 +117,8 @@ export const supabaseService = {
         return null;
       }
 
-      return mapSupabaseToMemoryCard(data as SupabaseMemoryCard);
+      console.log("Cartão encontrado:", data ? "sim" : "não");
+      return data ? mapSupabaseToMemoryCard(data as SupabaseMemoryCard) : null;
     } catch (error) {
       console.error("Erro ao buscar cartão:", error);
       return null;
@@ -111,19 +128,13 @@ export const supabaseService = {
   // Salvar um novo cartão de memória
   saveMemoryCard: async (card: MemoryCard): Promise<MemoryCard | null> => {
     try {
-      // Verificar autenticação
-      const isAuthenticated = await supabaseService.isUserAuthenticated();
-      if (!isAuthenticated) {
-        toast.error("Você precisa estar logado para criar um cartão. Por favor, faça login primeiro.");
-        throw new Error("Usuário não autenticado");
-      }
-
       // Obter dados do usuário atual
       const { data: userData, error: userError } = await supabase.auth.getUser();
+      
       if (userError || !userData.user) {
-        console.error("Erro ao obter dados do usuário:", userError);
-        toast.error("Não foi possível identificar o usuário. Por favor, faça login novamente.");
-        throw userError || new Error("Usuário não encontrado");
+        console.error("Erro ao obter dados do usuário:", userError?.message || "Usuário não encontrado");
+        toast.error("Você precisa estar logado para criar um cartão. Por favor, faça login primeiro.");
+        throw new Error("Usuário não autenticado");
       }
       
       const supabaseCard = mapMemoryCardToSupabase(card);
@@ -131,7 +142,8 @@ export const supabaseService = {
       // Adiciona o ID do usuário atual
       supabaseCard.user_id = userData.user.id;
       
-      console.log("Salvando cartão com usuário:", supabaseCard.user_id);
+      console.log("Salvando cartão para o usuário:", supabaseCard.user_id);
+      console.log("Dados do cartão:", JSON.stringify(supabaseCard));
 
       const { data, error } = await supabase
         .from("memory_cards")
@@ -141,9 +153,13 @@ export const supabaseService = {
 
       if (error) {
         console.error("Erro ao salvar cartão:", error);
+        console.error("Código do erro:", error.code);
+        console.error("Detalhes do erro:", error.details);
         
         if (error.code === "42501") {
           toast.error("Erro de permissão. Por favor, faça login novamente.");
+        } else if (error.message.includes("violates row-level security policy")) {
+          toast.error("Erro de segurança. Verifique se você está logado corretamente.");
         } else {
           toast.error(`Erro ao salvar cartão: ${error.message || "Tente novamente mais tarde"}`);
         }
@@ -172,12 +188,15 @@ export const supabaseService = {
   deleteMemoryCard: async (id: string): Promise<boolean> => {
     try {
       // Verificar autenticação
-      const isAuthenticated = await supabaseService.isUserAuthenticated();
-      if (!isAuthenticated) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error("Usuário não autenticado:", authError?.message || "Usuário não encontrado");
         toast.error("Você precisa estar logado para excluir um cartão.");
         return false;
       }
 
+      console.log("Excluindo cartão com ID:", id);
       const { error } = await supabase
         .from("memory_cards")
         .delete()
@@ -202,8 +221,10 @@ export const supabaseService = {
   uploadPhoto: async (file: File, folderName: string): Promise<string | null> => {
     try {
       // Verificar autenticação
-      const isAuthenticated = await supabaseService.isUserAuthenticated();
-      if (!isAuthenticated) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error("Usuário não autenticado:", authError?.message || "Usuário não encontrado");
         toast.error("Você precisa estar logado para fazer upload de fotos.");
         return null;
       }
@@ -211,6 +232,8 @@ export const supabaseService = {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `${folderName}/${fileName}`;
+      
+      console.log("Fazendo upload de foto:", filePath);
 
       const { error } = await supabase.storage
         .from('memory_card_photos')
@@ -227,6 +250,7 @@ export const supabaseService = {
         .from('memory_card_photos')
         .getPublicUrl(filePath);
 
+      console.log("URL da foto:", data.publicUrl);
       return data.publicUrl;
     } catch (error) {
       console.error("Erro ao fazer upload da foto:", error);
