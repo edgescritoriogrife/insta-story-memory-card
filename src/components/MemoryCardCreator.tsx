@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -421,3 +422,4 @@ const MemoryCardCreator = () => {
 };
 
 export default MemoryCardCreator;
+
